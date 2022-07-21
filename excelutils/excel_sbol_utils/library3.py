@@ -86,10 +86,11 @@ def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
 	prefs = rowobj.col_cell_dict['pref']
 	vals = rowobj.col_cell_dict['val']
 	print(prefs, vals)
-	for col in prefs:
+	for colnum in len(prefs.keys()):
 		print(col)
-		pref = prefs[col]
-		val = vals[col]
+		# as column names are different for the different multicol values
+		pref = prefs[prefs.keys()[colnum]]
+		val = vals[vals.keys()[colnum]]
 		print('pref', pref, 'val', val)
 
 		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
