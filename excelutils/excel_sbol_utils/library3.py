@@ -85,7 +85,7 @@ def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
 	print("THIS IS THE DATA SOURCE SPECIAL FUNCTION")
 	pref = rowobj.col_cell_dict['pref']
 	val = rowobj.col_cell_dict['val']
-	# print('pref', pref, 'val', val)
+	print('pref', pref, 'val', val)
 
 	datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
 					   'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
