@@ -1,0 +1,1 @@
+This library is a collection of functions to aid in the conversion of excel templates to SBOL libraries
