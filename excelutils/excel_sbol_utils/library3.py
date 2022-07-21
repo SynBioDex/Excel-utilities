@@ -29,9 +29,9 @@ def addToDescription(rowobj):
 
 def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 	if 'subcomp' in rowobj.col_cell_dict:
-		subcomps = rowobj.col_cell_dict['subcomp'].values()
+		subcomps = list(rowobj.col_cell_dict['subcomp'].values())
 	if 'constraint' in rowobj.col_cell_dict:
-		constraints = rowobj.col_cell_dict['constraint'].values()
+		constraints = list(rowobj.col_cell_dict['constraint'].values())
 	else:
 		constraints = []
 
@@ -85,7 +85,7 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 	else:
 		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, sbol term dict:{rowobj.col_cell_dict})')
 
-def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
+def dataSource(rowobj):
 	prefs = rowobj.col_cell_dict['pref']
 	vals = rowobj.col_cell_dict['val']
 	for colnum in range(len(prefs.keys())):
