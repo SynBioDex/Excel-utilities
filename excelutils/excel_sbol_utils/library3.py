@@ -85,8 +85,9 @@ def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
 	print("THIS IS THE DATA SOURCE SPECIAL FUNCTION")
 	prefs = rowobj.col_cell_dict['pref']
 	vals = rowobj.col_cell_dict['val']
-
+	print(prefs, vals)
 	for col in prefs:
+		print(col)
 		pref = prefs[col]
 		val = vals[col]
 		print('pref', pref, 'val', val)
