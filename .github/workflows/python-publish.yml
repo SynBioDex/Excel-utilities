@@ -23,7 +23,7 @@ jobs:
         pip install setuptools wheel twine
     - name: Update version
       run: |
-        cd ./excel2sbol
+        cd ./excelutils
         sed -i "s/version=.*,/version='${{ github.event.release.tag_name }}',/g" setup.py
     - name: Build and publish
       env:
