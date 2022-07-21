@@ -83,29 +83,33 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 
 def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
 	print("THIS IS THE DATA SOURCE SPECIAL FUNCTION")
-	pref = rowobj.col_cell_dict['pref']
-	val = rowobj.col_cell_dict['val']
-	print('pref', pref, 'val', val)
+	prefs = rowobj.col_cell_dict['pref']
+	vals = rowobj.col_cell_dict['val']
 
-	datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
-					   'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
-					   'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'TRUE'},
-					   'AddGene':{'Replace Example':'https://www.addgene.org/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
-					   'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'TRUE'},
-					   'Tax_id':{'Replace Example':'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={REPLACE_HERE}', 'Literal Part':'FALSE'},
-					   'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
-					   'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE'},
-					   'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
-					   'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'}
-					  }
+	for col in prefs:
+		pref = prefs[col]
+		val = vals[col]
+		print('pref', pref, 'val', val)
 
-	literal = datasource_dict[pref]['Literal Part']
+		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
+						'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
+						'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'TRUE'},
+						'AddGene':{'Replace Example':'https://www.addgene.org/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
+						'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'TRUE'},
+						'Tax_id':{'Replace Example':'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={REPLACE_HERE}', 'Literal Part':'FALSE'},
+						'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
+						'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE'},
+						'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
+						'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'}
+						}
 
-	if not literal:
-		rowobj.obj.wasDerivedFrom = val
+		literal = datasource_dict[pref]['Literal Part']
 
-	else:
-		logging.warning('Literal data sources are not yet supported.')
+		if not literal:
+			rowobj.obj.wasDerivedFrom = val
+
+		else:
+			logging.warning('Literal data sources are not yet supported.')
 
 def sequence(rowobj):
 	for col in rowobj.col_cell_dict.keys():
