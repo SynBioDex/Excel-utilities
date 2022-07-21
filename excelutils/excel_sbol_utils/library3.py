@@ -28,22 +28,26 @@ def addToDescription(rowobj):
 	setattr(rowobj.obj, 'description', current)
 
 def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
-	subparts = rowobj.col_cell_dict['subcomp'].values()
-	constraints = rowobj.col_cell_dict['constraint'].values()
+	if 'subcomp' in rowobj.col_cell_dict:
+		subcomps = rowobj.col_cell_dict['subcomp'].values()
+	if 'constraint' in rowobj.col_cell_dict:
+		constraints = rowobj.col_cell_dict['constraint'].values()
+	else:
+		constraints = []
 
 	if len(constraints) > 0:
 		logging.warning(f'Constraints have not yet been implemented')
 
 	# if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol3.component.Component):
-		for sub in subparts:
+		for sub in subcomps:
 			sub_part = sbol3.SubComponent(f'{sbol3.get_namespace()}{sub}')
 			rowobj.obj.features.append(sub_part)
 		# self.obj.assemblePrimaryStructure(self.cell_val)
 		# self.obj.compile(assembly_method=None)
 
 	elif isinstance(rowobj.obj, sbol3.combderiv.CombinatorialDerivation):
-		comp_list = subparts
+		comp_list = subcomps
 		comp_ind = 0
 		variant_comps = {}
 		for ind, comp in enumerate(comp_list):
@@ -82,15 +86,12 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, sbol term dict:{rowobj.col_cell_dict})')
 
 def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
-	print("THIS IS THE DATA SOURCE SPECIAL FUNCTION")
 	prefs = rowobj.col_cell_dict['pref']
 	vals = rowobj.col_cell_dict['val']
-	print(prefs, vals)
 	for colnum in range(len(prefs.keys())):
 		# as column names are different for the different multicol values
 		pref = prefs[list(prefs.keys())[colnum]]
 		val = vals[list(vals.keys())[colnum]]
-		print('pref', pref, 'val', val)
 
 		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
 						'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
@@ -106,7 +107,7 @@ def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
 
 		literal = datasource_dict[pref]['Literal Part']
 
-		if not literal:
+		if literal == 'FALSE':
 			rowobj.obj.wasDerivedFrom = val
 
 		else:
@@ -167,5 +168,3 @@ def finalProduct(rowobj):
 			
 			#add obj as member to final products
 			colec.members.append(rowobj.obj_uri)
-		else:
-			print(f'final product val {columns[col]}')
