@@ -86,7 +86,7 @@ def dataSource(rowobj): #UPDATE TO WORK ON MULTI COLUMN??? WITH CELL DICT
 	prefs = rowobj.col_cell_dict['pref']
 	vals = rowobj.col_cell_dict['val']
 	print(prefs, vals)
-	for colnum in len(prefs.keys()):
+	for colnum in range(len(prefs.keys())):
 		print(col)
 		# as column names are different for the different multicol values
 		pref = prefs[prefs.keys()[colnum]]
