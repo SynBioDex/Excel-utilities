@@ -147,7 +147,7 @@ def sequence(rowobj):
 		else:
 			raise TypeError(f"A multicolumn value was unexpectedly given in sequence, {rowobj.col_cell_dict}")
 
-def circular(rowobj):
+def circular(rowobj): # NOT IMPLEMENTED
 	# if false add to linear collection if true add to types
 	pass
 
