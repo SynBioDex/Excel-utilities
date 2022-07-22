@@ -63,8 +63,7 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		template = rowobj.obj_dict[f'{rowobj.obj.displayId}_template']['object']
 
 		for sub in comp_list:
-			name = f'{sbol3.get_namespace()}{sub}'
-			name = helpers.check_name(name)
+			name = f'{sbol3.get_namespace()}{helpers.check_name(sub)}'
 			sub_part = sbol3.SubComponent(name)
 			template.features.append(sub_part)
 		# template.assemblePrimaryStructure(comp_list)
@@ -78,7 +77,7 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 			var_comp.variable = variant_comps[var]['object']
 
 			var_list = re.split(",", variant_comps[var]['variant_list'])
-			var_list = [f'{sbol3.get_namespace()}{x.strip()}' for x in var_list]
+			var_list = [f'{sbol3.get_namespace()}{helpers.check_name(x.strip())}' for x in var_list]
 			var_comp.variants = var_list
 			rowobj.obj.variable_features.append(var_comp)
 
@@ -148,6 +147,10 @@ def sequence(rowobj):
 		else:
 			raise TypeError(f"A multicolumn value was unexpectedly given in sequence, {rowobj.col_cell_dict}")
 
+def circular(rowobj):
+	# if false add to linear collection if true add to types
+	pass
+
 def finalProduct(rowobj):
 	# create final products collection if it doesn't yet exist
 	# add object to collection
@@ -162,7 +165,6 @@ def finalProduct(rowobj):
 			sbol_objs_names = [x.name for x in sbol_objs]
 			if 'FinalProducts' not in sbol_objs:
 				colec = sbol3.Collection('FinalProducts', name='FinalProducts')
-				doc.add(colec)
 			else:
 				colec = sbol_objs[sbol_objs_names.index('FinalProducts')]
 			
