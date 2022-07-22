@@ -166,7 +166,7 @@ def finalProduct(rowobj):
 			sbol_objs = doc.objects
 			sbol_objs_names = [x.name for x in sbol_objs]
 			print(sbol_objs_names)
-			if 'FinalProducts' not in sbol_objs:
+			if 'FinalProducts' not in sbol_objs_names:
 				colec = sbol3.Collection('FinalProducts', name='FinalProducts')
 
 				sbol_objs = doc.objects
