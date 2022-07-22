@@ -155,16 +155,25 @@ def finalProduct(rowobj):
 	# create final products collection if it doesn't yet exist
 	# add object to collection
 	columns = rowobj.col_cell_dict
-
+ 
+	print(rowobj.col_cell_dict)
 	for col in columns:
 		# check if the cell value is true
+		print(col)
 		if columns[col]:
 			doc = rowobj.doc
 
 			sbol_objs = doc.objects
 			sbol_objs_names = [x.name for x in sbol_objs]
+			print(sbol_objs_names)
 			if 'FinalProducts' not in sbol_objs:
 				colec = sbol3.Collection('FinalProducts', name='FinalProducts')
+
+				sbol_objs = doc.objects
+				sbol_objs_names = [x.name for x in sbol_objs]
+				print(sbol_objs_names)
+
+				doc.add(colec)
 			else:
 				colec = sbol_objs[sbol_objs_names.index('FinalProducts')]
 			
