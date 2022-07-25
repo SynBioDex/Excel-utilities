@@ -68,55 +68,58 @@ def definedFunComponent(rowobj): #NOT IMPLEMENTED
     pass
 
 def subcomponents(rowobj):
-    if 'subcomp' in rowobj.col_cell_dict:
-        subcomps = list(rowobj.col_cell_dict['subcomp'].values())
-    if 'constraint' in rowobj.col_cell_dict:
-        constraints = list(rowobj.col_cell_dict['constraint'].values())
-    else:
-        constraints = []
+	if 'subcomp' in rowobj.col_cell_dict:
+		subcomps = list(rowobj.col_cell_dict['subcomp'].values())
+	if 'constraint' in rowobj.col_cell_dict:
+		constraints = list(rowobj.col_cell_dict['constraint'].values())
+	else:
+		constraints = []
 
-    if len(constraints) > 0:
-        logging.warning(f'Constraints have not yet been implemented')
+	if len(constraints) > 0:
+		logging.warning(f'Constraints have not yet been implemented')
+
+	print(type(rowobj.obj)
 
     # if type is compdef do one thing, if combdev do another, else error
-    if isinstance(rowobj.obj, sbol2.componentdefinition.ComponentDefinition):
-        rowobj.obj.assemblePrimaryStructure(subcomps)
-        rowobj.obj.compile(assembly_method=None)
+	if isinstance(rowobj.obj, sbol2.componentdefinition.ComponentDefinition):
+		rowobj.obj.assemblePrimaryStructure(subcomps)
+		rowobj.obj.compile(assembly_method=None)
 
-    elif isinstance(rowobj.obj, sbol2.combinatorialderivation.CombinatorialDerivation):
-        comp_list = subcomps
-        comp_ind = 0
-        variant_comps = {}
-        for ind, comp in enumerate(comp_list):
-            if "," in comp:
-                comp_list[ind] = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
-                uri = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
-                sub_comp = sbol2.ComponentDefinition(uri)
-                sub_comp.displayId = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
-                rowobj.doc.add(sub_comp)
-                variant_comps[f'subcomponent_{comp_ind}'] = {'object': sub_comp, 'variant_list': comp}
-                comp_ind += 1
+	elif isinstance(rowobj.obj, sbol2.combinatorialderivation.CombinatorialDerivation):
+		comp_list = subcomps
+		print(f'comp list:{comp_list}')
+		comp_ind = 0
+		variant_comps = {}
+		for ind, comp in enumerate(comp_list):
+			if "," in comp:
+				comp_list[ind] = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
+				uri = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
+				sub_comp = sbol2.ComponentDefinition(uri)
+				sub_comp.displayId = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
+				rowobj.doc.add(sub_comp)
+				variant_comps[f'subcomponent_{comp_ind}'] = {'object': sub_comp, 'variant_list': comp}
+				comp_ind += 1
 
-        template = sbol2.ComponentDefinition(f'{rowobj.obj.displayId}_template')
-        template.displayId = f'{rowobj.obj.displayId}_template'
-        rowobj.doc.add(template)
+		template = sbol2.ComponentDefinition(f'{rowobj.obj.displayId}_template')
+		template.displayId = f'{rowobj.obj.displayId}_template'
+		rowobj.doc.add(template)
 
-        template.assemblePrimaryStructure(comp_list)
-        template.compile(assembly_method=None)
+		template.assemblePrimaryStructure(comp_list)
+		template.compile(assembly_method=None)
 
-        rowobj.obj.masterTemplate = template
-        for var in variant_comps:
-            var_comp = sbol2.VariableComponent(f'var_{var}')
-            var_comp.displayId = f'var_{var}'
-            var_comp.variable = variant_comps[var]['object']
+		rowobj.obj.masterTemplate = template
+		for var in variant_comps:
+			var_comp = sbol2.VariableComponent(f'var_{var}')
+			var_comp.displayId = f'var_{var}'
+			var_comp.variable = variant_comps[var]['object']
 
-            var_list = re.split(",", variant_comps[var]['variant_list'])
-            var_list = [f'{sbol2.getHomespace()}{x.strip()}' for x in var_list]
-            var_comp.variants = var_list
-            rowobj.obj.variableComponents.add(var_comp)
+			var_list = re.split(",", variant_comps[var]['variant_list'])
+			var_list = [f'{sbol2.getHomespace()}{x.strip()}' for x in var_list]
+			var_comp.variants = var_list
+			rowobj.obj.variableComponents.add(var_comp)
 
-    else:
-        raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{self.sheet}, row:{self.sht_row}, col:{self.sht_col})')
+	else:
+		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{self.sheet}, row:{self.sht_row}, col:{self.sht_col})')
 
 def dataSource(rowobj):
 	prefs = rowobj.col_cell_dict['pref']
