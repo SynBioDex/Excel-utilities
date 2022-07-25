@@ -78,7 +78,7 @@ def subcomponents(rowobj):
 	if len(constraints) > 0:
 		logging.warning(f'Constraints have not yet been implemented')
 
-	print(type(rowobj.obj)
+	print(type(rowobj.obj))
 
     # if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol2.componentdefinition.ComponentDefinition):
