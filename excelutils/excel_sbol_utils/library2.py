@@ -119,7 +119,7 @@ def subcomponents(rowobj):
 			rowobj.obj.variableComponents.add(var_comp)
 
 	else:
-		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{self.sheet}, row:{self.sht_row}, col:{self.sht_col})')
+		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, col:{rowobj.sht_col})')
 
 def dataSource(rowobj):
 	prefs = rowobj.col_cell_dict['pref']
