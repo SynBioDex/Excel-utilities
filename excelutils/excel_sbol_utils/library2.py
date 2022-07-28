@@ -1,5 +1,5 @@
 import sbol2
-import excel2sbol.helper_functions as hf
+import excel_sbol_utils.helpers as hf
 import re
 import logging
 # might be better if some of the ones like data sources were put in a library
@@ -93,7 +93,8 @@ def subcomponents(rowobj):
 		comp_ind = 0
 		variant_comps = {}
 		for ind, comp in enumerate(comp_list):
-			if "," in comp or type(rowobj.obj_dict[comp]['object']) == sbol2.combinatorialderivation.CombinatorialDerivation:
+			if "," in comp or type(rowobj.obj_dict[comp]['object']) == \
+									sbol2.combinatorialderivation.CombinatorialDerivation:
 				comp_list[ind] = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
 				uri = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
 				sub_comp = sbol2.ComponentDefinition(uri)
@@ -123,7 +124,7 @@ def subcomponents(rowobj):
 			rowobj.obj.variableComponents.add(var_comp)
 
 	else:
-		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, col:{rowobj.sht_col})')
+		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, col:{rowobj.col_cell_dict})')
 
 def dataSource(rowobj):
 	prefs = rowobj.col_cell_dict['pref']
