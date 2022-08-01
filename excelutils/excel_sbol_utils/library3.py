@@ -27,16 +27,39 @@ def addToDescription(rowobj):
 			raise TypeError(f"A multicolumn value was unexpectedly given in addToDescription, {rowobj.col_cell_dict}")
 	setattr(rowobj.obj, 'description', current)
 
+constraint_pattern = re.compile('Part (\d+) (.+) Part (\d+)')
+constraint_dict = {'same as': sbol3.SBOL_VERIFY_IDENTICAL,
+                   'different from': sbol3.SBOL_DIFFERENT_FROM,
+                   'same orientation as': sbol3.SBOL_SAME_ORIENTATION_AS,
+                   'different orientation from': sbol3.SBOL_SAME_ORIENTATION_AS}
+def make_constraint(constraint, part_list):
+    m = constraint_pattern.match(constraint)
+    if not m:
+        raise ValueError(f'Constraint "{constraint}" does not match pattern "Part X relation Part Y"')
+    try:
+        restriction = constraint_dict[m.group(2)]
+    except KeyError:
+        raise ValueError(f'Do not recognize constraint relation in "{constraint}"')
+    x = int(m.group(1))
+    y = int(m.group(3))
+    if x is y:
+        raise ValueError(f'A part cannot constrain itself: {constraint}')
+    for n in [x,y]:
+       if not (0 < n <= len(part_list)):
+           raise ValueError(f'Part number "{str(n)}" is not between 1 and {len(part_list)}')
+    return sbol3.Constraint(restriction, part_list[x-1], part_list[y-1])
+
 def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 	if 'subcomp' in rowobj.col_cell_dict:
 		subcomps = list(rowobj.col_cell_dict['subcomp'].values())
 	if 'constraint' in rowobj.col_cell_dict:
 		constraints = list(rowobj.col_cell_dict['constraint'].values())
+		c_list = (make_constraint(c.strip(), subcomps) for c in constraints)
 	else:
 		constraints = []
 
-	if len(constraints) > 0:
-		logging.warning(f'Constraints have not yet been implemented')
+	#if len(constraints) > 0:
+	#	logging.warning(f'Constraints have not yet been implemented')
 
 	# if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol3.component.Component):
@@ -51,7 +74,8 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		comp_ind = 0
 		variant_comps = {}
 		for ind, comp in enumerate(comp_list):
-			if "," in comp:
+			if "," in comp or type(rowobj.obj_dict[comp]['object']) == \
+									sbol3.combderiv.CombinatorialDerivation:
 				comp_list[ind] = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
 				uri = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
 				sub_comp = sbol3.Component(uri, sbol3.SBO_DNA)
@@ -68,6 +92,9 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 			template.features.append(sub_part)
 		# template.assemblePrimaryStructure(comp_list)
 		# template.compile(assembly_method=None)
+		if constraints:
+			for constraint in c_list:
+				template.constraints.append(constraint)
 
 		rowobj.obj.masterTemplate = template
 		for var in variant_comps:
