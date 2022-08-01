@@ -54,7 +54,8 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		subcomps = list(rowobj.col_cell_dict['subcomp'].values())
 	if 'constraint' in rowobj.col_cell_dict:
 		constraints = list(rowobj.col_cell_dict['constraint'].values())
-		c_list = (make_constraint(c.strip(), subcomps) for c in constraints)
+		c_split = constraints[0].split(',')
+		c_list = (make_constraint(c.strip(), subcomps) for c in c_split)
 	else:
 		constraints = []
 
