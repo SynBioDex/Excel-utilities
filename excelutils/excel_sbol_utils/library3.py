@@ -32,7 +32,7 @@ constraint_dict = {'same as': sbol3.SBOL_VERIFY_IDENTICAL,
                    'different from': sbol3.SBOL_DIFFERENT_FROM,
                    'same orientation as': sbol3.SBOL_SAME_ORIENTATION_AS,
                    'different orientation from': sbol3.SBOL_SAME_ORIENTATION_AS}
-def make_constraint(constraint, part_list):
+def make_constraint(constraint, part_list, template):
     m = constraint_pattern.match(constraint)
     if not m:
         raise ValueError(f'Constraint "{constraint}" does not match pattern "Part X relation Part Y"')
@@ -40,14 +40,14 @@ def make_constraint(constraint, part_list):
         restriction = constraint_dict[m.group(2)]
     except KeyError:
         raise ValueError(f'Do not recognize constraint relation in "{constraint}"')
-    x = int(m.group(1))
+    x = int(m.group(1)) # Part numbers 
     y = int(m.group(3))
     if x is y:
         raise ValueError(f'A part cannot constrain itself: {constraint}')
     for n in [x,y]:
        if not (0 < n <= len(part_list)):
            raise ValueError(f'Part number "{str(n)}" is not between 1 and {len(part_list)}')
-    return sbol3.Constraint(restriction, part_list[x-1], part_list[y-1])
+    return sbol3.Constraint(restriction, template.features[x-1].identity, template.features[y-1].identity)
 
 def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 	if 'subcomp' in rowobj.col_cell_dict:
@@ -55,12 +55,9 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 	if 'constraint' in rowobj.col_cell_dict:
 		constraints = list(rowobj.col_cell_dict['constraint'].values())
 		c_split = constraints[0].split(',')
-		c_list = (make_constraint(c.strip(), subcomps) for c in c_split)
+		c_list = (make_constraint(c.strip(), subcomps, template) for c in c_split)
 	else:
 		constraints = []
-
-	#if len(constraints) > 0:
-	#	logging.warning(f'Constraints have not yet been implemented')
 
 	# if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol3.component.Component):
