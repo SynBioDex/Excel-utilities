@@ -195,8 +195,23 @@ def finalProduct(rowobj):
 				sbol_objs_names = [x.name for x in sbol_objs]
 
 				doc.add(colec)
+				colec.members.append(rowobj.obj_uri)
 			else:
 				colec = sbol_objs[sbol_objs_names.index('FinalProducts')]
+				colec.members.append(rowobj.obj_uri)
+
+			if 'LinearDNAProducts' not in sbol_objs_names:
+				colec = sbol3.Collection('LinearDNAProducts', name='LinearDNAProducts')
+
+				sbol_objs = doc.objects
+				sbol_objs_names = [x.name for x in sbol_objs]
+
+				doc.add(colec)
+				colec.members.append(rowobj.obj_uri + '_ins')
+			else:
+				colec = sbol_objs[sbol_objs_names.index('LinearDNAProducts')]
+				colec.members.append(rowobj.obj_uri + '_ins')
+
 			
 			#add obj as member to final products
-			colec.members.append(rowobj.obj_uri)
+			
