@@ -176,6 +176,57 @@ def circular(rowobj): # NOT IMPLEMENTED
 	# if false add to linear collection if true add to types
 	pass
 
+def backbone(rowobj):
+	name = rowobj.col_cell_dict['Backbone/locus']
+	backbones_list = name.split(",")
+	if rowobj.obj_dict[name] == None:
+		raise ValueError(f'Could not find specified backbone(s) {rowobj.obj_uri}')
+	else:
+		if type(rowobj.obj) == sbol3.combderiv.CombinatorialDerivation:
+			# obj = rowobj.obj
+
+			plasmid = sbol3.Component(f'{rowobj.obj.display_id}_template_01', sbol3.SBO_DNA)
+			rowobj.doc.add(plasmid)
+			part_sub = sbol3.LocalSubComponent([sbol3.SBO_DNA], name="Inserted Construct")
+			plasmid.features.append(part_sub)
+			plasmid_cd = sbol3.CombinatorialDerivation(f'{rowobj.obj.display_id}_plasmid', plasmid, name=name)
+			rowobj.doc.add(plasmid_cd)
+			part_var = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=part_sub)
+			plasmid_cd.variable_features.append(part_var)
+			part_var.variant_derivations.append(rowobj.obj)
+		else:
+			if len(backbones_list) == 1:
+				plasmid = sbol3.Component(rowobj.obj.display_id, sbol3.SBO_DNA, name=name)
+				rowobj.doc.add(plasmid)
+				part_sub = sbol3.SubComponent(rowobj.obj)
+				plasmid.features.append(part_sub)
+			
+			else:
+				plasmid = sbol3.Component(f'{rowobj.obj.display_id}_template', sbol3.SBO_DNA)
+				rowobj.doc.add(plasmid)
+				part_sub = sbol3.SubComponent(rowobj.obj)
+				plasmid.features.append(part_sub)
+				plasmid_cd = sbol3.CombinatorialDerivation(rowobj.obj.display_id, plasmid, name=name)
+				rowobj.doc.add(plasmid_cd)
+
+	if len(backbones_list) == 1:
+		backbone_sub = sbol3.SubComponent(backbones_list[0])
+		plasmid.features.append(backbone_sub)
+	else:
+		backbone_sub = sbol3.LocalSubComponent([sbol3.SBO_DNA])
+		backbone_sub.name = "Vector"
+		plasmid.features.append(backbone_sub)
+		backbone_var = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=backbone_sub)
+		plasmid_cd.variable_features.append(backbone_var)
+		backbone_var.variants += backbones_list
+	
+	plasmid.constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, part_sub, backbone_sub))
+	plasmid.constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, backbone_sub, part_sub))
+
+			
+
+
+
 def finalProduct(rowobj):
 	# create final products collection if it doesn't yet exist
 	# add object to collection
