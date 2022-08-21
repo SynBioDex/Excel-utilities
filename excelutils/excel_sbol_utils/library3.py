@@ -1,3 +1,4 @@
+from hashlib import new
 import re
 import logging
 import sbol3
@@ -59,6 +60,29 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 	else:
 		constraints = []
 
+	if 'backbone' in rowobj.col_cell_dict:
+		temp = sbol3.component.Component(identity=f'{rowobj.obj.displayId}_ins_template', types=sbol3.SBO_DNA, name=f'{rowobj.obj.displayId}_ins_template')
+		newobj = sbol3.CombinatorialDerivation(identity=f'{rowobj.obj.displayId}_ins', template=temp, name=f'{rowobj.obj.displayId}_ins')
+		rowobj.doc.add(temp)
+		rowobj.doc.add(newobj)
+		rowobj.obj_dict[temp.display_id] = {'uri': temp.type_uri, 'object': temp,
+                                'displayId': temp.display_id}
+		backbones = list(rowobj.col_cell_dict['backbone'].values())
+		b_split = backbones[0].split(',')
+		back = True
+		oldobj = rowobj.obj
+		rowobj.obj = newobj
+
+		# For every backbone, if it exists, add as subcomponent to toplevel, otherwise create and add.
+		for b in b_split:
+			try:
+				obj = rowobj.obj_dict[b]['object']
+				# rowobj.obj.variable_features.append(obj)
+			except:
+				newcomp = sbol3.Component(identity=b, types= sbol3.SBO_DNA, name=b)
+				# rowobj.obj.features.append(newcomp)
+
+
 	# if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol3.component.Component):
 		for sub in subcomps:
@@ -74,15 +98,15 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		for ind, comp in enumerate(comp_list):
 			if "," in comp or type(rowobj.obj_dict[comp]['object']) == \
 									sbol3.combderiv.CombinatorialDerivation:
-				comp_list[ind] = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
-				uri = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
+				comp_list[ind] = f'{rowobj.obj.display_id}_subcomponent_{comp_ind}'
+				uri = f'{rowobj.obj.display_id}_subcomponent_{comp_ind}'
 				sub_comp = sbol3.Component(uri, sbol3.SBO_DNA)
-				sub_comp.displayId = f'{rowobj.obj.displayId}_subcomponent_{comp_ind}'
+				sub_comp.displayId = f'{rowobj.obj.display_id}_subcomponent_{comp_ind}'
 				rowobj.doc.add(sub_comp)
 				variant_comps[f'subcomponent_{comp_ind}'] = {'object': sub_comp, 'variant_list': comp}
 				comp_ind += 1
 
-		template = rowobj.obj_dict[f'{rowobj.obj.displayId}_template']['object']
+		template = rowobj.obj_dict[f'{rowobj.obj.display_id}_template']['object']
 
 		for sub in comp_list:
 			name = f'{sbol3.get_namespace()}{helpers.check_name(sub)}'
@@ -176,57 +200,6 @@ def circular(rowobj): # NOT IMPLEMENTED
 	# if false add to linear collection if true add to types
 	pass
 
-def backbone(rowobj):
-	name = rowobj.col_cell_dict['Backbone/locus']
-	backbones_list = name.split(",")
-	if rowobj.obj_dict[name] == None:
-		raise ValueError(f'Could not find specified backbone(s) {rowobj.obj_uri}')
-	else:
-		if type(rowobj.obj) == sbol3.combderiv.CombinatorialDerivation:
-			# obj = rowobj.obj
-
-			plasmid = sbol3.Component(f'{rowobj.obj.display_id}_template_01', sbol3.SBO_DNA)
-			rowobj.doc.add(plasmid)
-			part_sub = sbol3.LocalSubComponent([sbol3.SBO_DNA], name="Inserted Construct")
-			plasmid.features.append(part_sub)
-			plasmid_cd = sbol3.CombinatorialDerivation(f'{rowobj.obj.display_id}_plasmid', plasmid, name=name)
-			rowobj.doc.add(plasmid_cd)
-			part_var = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=part_sub)
-			plasmid_cd.variable_features.append(part_var)
-			part_var.variant_derivations.append(rowobj.obj)
-		else:
-			if len(backbones_list) == 1:
-				plasmid = sbol3.Component(rowobj.obj.display_id, sbol3.SBO_DNA, name=name)
-				rowobj.doc.add(plasmid)
-				part_sub = sbol3.SubComponent(rowobj.obj)
-				plasmid.features.append(part_sub)
-			
-			else:
-				plasmid = sbol3.Component(f'{rowobj.obj.display_id}_template', sbol3.SBO_DNA)
-				rowobj.doc.add(plasmid)
-				part_sub = sbol3.SubComponent(rowobj.obj)
-				plasmid.features.append(part_sub)
-				plasmid_cd = sbol3.CombinatorialDerivation(rowobj.obj.display_id, plasmid, name=name)
-				rowobj.doc.add(plasmid_cd)
-
-	if len(backbones_list) == 1:
-		backbone_sub = sbol3.SubComponent(backbones_list[0])
-		plasmid.features.append(backbone_sub)
-	else:
-		backbone_sub = sbol3.LocalSubComponent([sbol3.SBO_DNA])
-		backbone_sub.name = "Vector"
-		plasmid.features.append(backbone_sub)
-		backbone_var = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=backbone_sub)
-		plasmid_cd.variable_features.append(backbone_var)
-		backbone_var.variants += backbones_list
-	
-	plasmid.constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, part_sub, backbone_sub))
-	plasmid.constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, backbone_sub, part_sub))
-
-			
-
-
-
 def finalProduct(rowobj):
 	# create final products collection if it doesn't yet exist
 	# add object to collection
@@ -258,10 +231,10 @@ def finalProduct(rowobj):
 				sbol_objs_names = [x.name for x in sbol_objs]
 
 				doc.add(colec)
-				colec.members.append(rowobj.obj_uri + '_ins')
+				colec.members.append(rowobj.obj)
 			else:
 				colec = sbol_objs[sbol_objs_names.index('LinearDNAProducts')]
-				colec.members.append(rowobj.obj_uri + '_ins')
+				colec.members.append(rowobj.obj)
 
 			
 			#add obj as member to final products
