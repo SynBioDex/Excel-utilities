@@ -77,10 +77,13 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		for b in b_split:
 			try:
 				obj = rowobj.obj_dict[b]['object']
-				# rowobj.obj.variable_features.append(obj)
+				temp_var = sbol3.SubComponent(instance_of=obj)
+				oldobj.features.append(temp_var)
 			except:
 				newcomp = sbol3.Component(identity=b, types= sbol3.SBO_DNA, name=b)
-				# rowobj.obj.features.append(newcomp)
+				rowobj.doc.add(newcomp)
+				temp_var = sbol3.SubComponent(instance_of=newcomp)
+				rowobj.obj.features.append(temp_var)
 
 
 	# if type is compdef do one thing, if combdev do another, else error
