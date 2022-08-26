@@ -143,7 +143,8 @@ def dataSource(rowobj):
 						'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'},
 						'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE'},
 						'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'},
-						'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'}
+						'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'},
+				   		'DOI':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'}
 						}
 		#datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
 		#				'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
