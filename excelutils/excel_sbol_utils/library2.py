@@ -134,24 +134,37 @@ def dataSource(rowobj):
 		pref = prefs[list(prefs.keys())[colnum]]
 		val = vals[list(vals.keys())[colnum]]
 
-		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
+		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'FALSE'},
 						'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
-						'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'TRUE'},
+						'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'FALSE'},
 						'AddGene':{'Replace Example':'https://www.addgene.org/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
-						'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'TRUE'},
+						'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'FALSE'},
 						'Tax_id':{'Replace Example':'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={REPLACE_HERE}', 'Literal Part':'FALSE'},
-						'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
+						'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'},
 						'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE'},
-						'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
-						'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'}
+						'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'},
+						'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE'}
 						}
+		#datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE'},
+		#				'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
+		#				'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'TRUE'},
+		#				'AddGene':{'Replace Example':'https://www.addgene.org/{REPLACE_HERE}/', 'Literal Part':'FALSE'},
+		#				'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'TRUE'},
+		#				'Tax_id':{'Replace Example':'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={REPLACE_HERE}', 'Literal Part':'FALSE'},
+		#				'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
+		#				'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE'},
+		#				'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'},
+		#				'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE'}
+		#				}
 
 		literal = datasource_dict[pref]['Literal Part']
 
 		if literal == 'FALSE':
-			rowobj.obj.wasDerivedFrom = val
+			rowobj.obj.wasDerivedFrom = datasource_dict[pref]['Replace Example'].replace('{REPLACE_HERE}', val)
 
 		else:
+			#replace_str = datasource_dict[pref]['Replace Example']
+			#rowobj.obj.wasDerivedFrom = 
 			logging.warning('Literal data sources are not yet supported.')
 
 def sequence(rowobj):
