@@ -84,6 +84,7 @@ def subcomponents(rowobj):
 
     # if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol2.componentdefinition.ComponentDefinition):
+		subcomps = [hf.check_name(x) for x in subcomps]	
 		rowobj.obj.assemblePrimaryStructure(subcomps)
 		rowobj.obj.compile(assembly_method=None)
 
