@@ -92,6 +92,7 @@ def subcomponents(rowobj):
 		#print(f'comp list:{comp_list}')
 		comp_ind = 0
 		variant_comps = {}
+		non_var_comps = []
 		for ind, comp in enumerate(comp_list):
 			if "," in comp or type(rowobj.obj_dict[comp]['object']) == \
 									sbol2.combinatorialderivation.CombinatorialDerivation:
@@ -104,11 +105,14 @@ def subcomponents(rowobj):
 				comp_ind += 1
 			else:
 				comp_list[ind] = hf.check_name(comp_list[ind])
+				non_var_comps.add(hf.check_name(comp_list[ind]))
 
 		template = sbol2.ComponentDefinition(f'{rowobj.obj.displayId}_template')
 		template.displayId = f'{rowobj.obj.displayId}_template'
 		rowobj.doc.add(template)
 
+		print(comp_list)
+		print(non_var_comps)
 		template.assemblePrimaryStructure(comp_list)
 		#template.compile(assembly_method=None)
 
