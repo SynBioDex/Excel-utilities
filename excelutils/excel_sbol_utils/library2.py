@@ -80,7 +80,7 @@ def subcomponents(rowobj):
 	if len(constraints) > 0:
 		logging.warning(f'Constraints have not yet been implemented')
 
-	print(type(rowobj.obj))
+	#print(type(rowobj.obj))
 
     # if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol2.componentdefinition.ComponentDefinition):
@@ -89,7 +89,7 @@ def subcomponents(rowobj):
 
 	elif isinstance(rowobj.obj, sbol2.combinatorialderivation.CombinatorialDerivation):
 		comp_list = subcomps
-		print(f'comp list:{comp_list}')
+		#print(f'comp list:{comp_list}')
 		comp_ind = 0
 		variant_comps = {}
 		for ind, comp in enumerate(comp_list):
@@ -114,6 +114,7 @@ def subcomponents(rowobj):
 
 		rowobj.obj.masterTemplate = template
 		for var in variant_comps:
+			var = hf.check_name(var)
 			var_comp = sbol2.VariableComponent(f'var_{var}')
 			var_comp.displayId = f'var_{var}'
 			var_comp.variable = variant_comps[var]['object']
