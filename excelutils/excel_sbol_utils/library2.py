@@ -111,10 +111,13 @@ def subcomponents(rowobj):
 		template.displayId = f'{rowobj.obj.displayId}_template'
 		rowobj.doc.add(template)
 
-		print(comp_list)
-		print(non_var_comps)
+		#print(comp_list)
+		#print(non_var_comps)
 		template.assemblePrimaryStructure(comp_list)
 		#template.compile(assembly_method=None)
+		
+		f#or comp in non_var_comps:
+			
 
 		rowobj.obj.masterTemplate = template
 		for var in variant_comps:
