@@ -105,7 +105,7 @@ def subcomponents(rowobj):
 				comp_ind += 1
 			else:
 				comp_list[ind] = hf.check_name(comp_list[ind])
-				non_var_comps.add(hf.check_name(comp_list[ind]))
+				non_var_comps.append(hf.check_name(comp_list[ind]))
 
 		template = sbol2.ComponentDefinition(f'{rowobj.obj.displayId}_template')
 		template.displayId = f'{rowobj.obj.displayId}_template'
