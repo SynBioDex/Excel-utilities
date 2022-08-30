@@ -120,7 +120,7 @@ def subcomponents(rowobj):
 			var_comp.variable = variant_comps[var]['object']
 
 			var_list = re.split(",", variant_comps[var]['variant_list'])
-			var_list = [f'{sbol2.getHomespace()}/{hf.check_name(x.strip())}' for x in var_list]
+			var_list = [f'{sbol2.getHomespace()}{hf.check_name(x.strip())}' for x in var_list]
 			var_comp.variants = var_list
 			rowobj.obj.variableComponents.add(var_comp)
 
