@@ -86,7 +86,7 @@ def subcomponents(rowobj):
 	if isinstance(rowobj.obj, sbol2.componentdefinition.ComponentDefinition):
 		subcomps = [hf.check_name(x) for x in subcomps]	
 		rowobj.obj.assemblePrimaryStructure(subcomps)
-		rowobj.obj.compile(assembly_method=None)
+		#rowobj.obj.compile(assembly_method=None) #need to fix range for annotations if the sequence is only added later.
 
 	elif isinstance(rowobj.obj, sbol2.combinatorialderivation.CombinatorialDerivation):
 		comp_list = subcomps
