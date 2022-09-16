@@ -2,7 +2,7 @@ from hashlib import new
 import re
 import logging
 import sbol3
-import excel_sbol_utils.helpers as helpers
+import sys
 
 
 def objectType(rowobj):
@@ -61,29 +61,28 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		constraints = []
 
 	if 'backbone' in rowobj.col_cell_dict:
-		temp = sbol3.component.Component(identity=f'{rowobj.obj.displayId}_ins_template', types=sbol3.SBO_DNA, name=f'{rowobj.obj.displayId}_ins_template')
+		temp = sbol3.Component(identity=f'{rowobj.obj.displayId}_ins_template', types=sbol3.SBO_DNA, name=f'{rowobj.obj.displayId}_ins_template')
 		newobj = sbol3.CombinatorialDerivation(identity=f'{rowobj.obj.displayId}_ins', template=temp, name=f'{rowobj.obj.displayId}_ins')
 		rowobj.doc.add(temp)
 		rowobj.doc.add(newobj)
 		rowobj.obj_dict[temp.display_id] = {'uri': temp.type_uri, 'object': temp,
                                 'displayId': temp.display_id}
 		backbones = list(rowobj.col_cell_dict['backbone'].values())
-		b_split = backbones[0].split(',')
-		back = True
+
 		oldobj = rowobj.obj
 		rowobj.obj = newobj
 
 		# For every backbone, if it exists, add as subcomponent to toplevel, otherwise create and add.
-		for b in b_split:
-			try:
-				obj = rowobj.obj_dict[b]['object']
-				temp_var = sbol3.SubComponent(instance_of=obj)
-				oldobj.features.append(temp_var)
-			except:
-				newcomp = sbol3.Component(identity=b, types= sbol3.SBO_DNA, name=b)
-				rowobj.doc.add(newcomp)
-				temp_var = sbol3.SubComponent(instance_of=newcomp)
-				rowobj.obj.features.append(temp_var)
+		
+		# for b in b_split:
+			# try:
+			# backbone_sub = sbol3.SubComponent(identity='Subcomponent1', instance_of=rowobj.obj_dict[b]['object'])
+			# oldobj.features.append(backbone_sub)
+			# except:
+			# 	newcomp = sbol3.Component(identity=b, types= sbol3.SBO_DNA, name=b)
+			# 	rowobj.doc.add(newcomp)
+			# 	temp_var = sbol3.SubComponent(newobj)
+			# 	rowobj.obj.features.append(temp_var)
 
 
 	# if type is compdef do one thing, if combdev do another, else error
@@ -109,7 +108,18 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 				variant_comps[f'subcomponent_{comp_ind}'] = {'object': sub_comp, 'variant_list': comp}
 				comp_ind += 1
 
-		template = rowobj.obj_dict[f'{rowobj.obj.display_id}_template']['object']
+		if 'backbone' in rowobj.col_cell_dict:
+			template = temp
+			var_feat = {'object': rowobj.obj}
+			var_c = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variant_derivations=var_feat['object'], \
+						variable=f'{rowobj.obj.namespace}{rowobj.obj.display_id}_subcomponent_0')
+			oldobj.variable_features.append(var_c)
+			nameOfTemplate = f'{oldobj.template}'
+			rowobj.obj_dict[nameOfTemplate[len(sbol3.get_namespace()):]]['object'].constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, var_c, f'{rowobj.obj.namespace}{rowobj.obj.display_id}_subcomponent_0'))
+			rowobj.obj_dict[nameOfTemplate[len(sbol3.get_namespace()):]]['object'].constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, f'{rowobj.obj.namespace}{rowobj.obj.display_id}_subcomponent_0', var_c))
+
+		else:
+			template = rowobj.obj_dict[f'{rowobj.obj.display_id}_template']['object']
 
 		for sub in comp_list:
 			name = f'{sbol3.get_namespace()}{helpers.check_name(sub)}'
