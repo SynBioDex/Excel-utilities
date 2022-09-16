@@ -16,7 +16,9 @@ def check_name(nm_to_chck):
     if not bool(re.match('^[a-zA-Z0-9]+$', nm_to_chck)):
         # replace special characters with numbers
         for ltr in nm_to_chck:
-            if ord(ltr) > 122 or ord(ltr) < 48:
+            if ord(ltr) == 32:
+                nm_to_chck = nm_to_chck.replace(ltr, "_")
+            elif ord(ltr) > 122 or ord(ltr) < 48:
                 # 122 is the highest decimal code number
                 # for common latin ltrs or arabic numbers
                 # this helps identify special characters like
@@ -27,8 +29,6 @@ def check_name(nm_to_chck):
                 # new_ltr = str(ltr.encode("unicode_escape"))
                 # new_ltr = new_ltr.replace(r"b'\\", "").replace("'", "")
                 # nm_to_chck = nm_to_chck.replace(ltr, f'_{new_ltr}_')
-            elif ord(ltr) == 32:
-                nm_to_chck = nm_to_chck.replace(ltr, "_")
             else:
                 # remove all letters, numbers and whitespaces
                 ltr = re.sub(r'[\w, \s]', '', ltr)
