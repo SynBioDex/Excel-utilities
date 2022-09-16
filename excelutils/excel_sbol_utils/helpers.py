@@ -1,4 +1,5 @@
 import re
+import string
 
 def check_name(nm_to_chck):
     """the function verifies that the names is alphanumeric and
@@ -42,3 +43,60 @@ def check_name(nm_to_chck):
             nm_to_chck = f"_{nm_to_chck}"
 
     return(nm_to_chck)
+
+
+def truthy_strings(to_check):
+    """Takes in several variants of True and False and returns a boolean
+    True or False
+
+    Args:
+        to_check (string,boolean): A string or boolean such as 'True', 'TRUE',
+        'tRue', or True
+
+    Raises:
+        TypeError: If the value can't be converted to 'true' or 'false'
+        an error is raised
+
+    Returns:
+        [boolean]: True or False is returned depending on the inputs
+    """
+    if str(to_check).lower() == 'false':
+        return False
+    elif str(to_check).lower() == 'true':
+        return True
+    else:
+        raise TypeError
+
+
+def col_to_num(col_name):
+    """takes an excel column name, e.g. AA and converts it to a
+    zero indexed number e.g. 26
+
+    Args:
+       col_name (string): An excel formatted column name, e.g. AA
+
+    Raises:
+        TypeError: Raised if the input is not a string
+        ValueError: Raised if the string is longer than three
+                    or contains spaces
+
+    Returns:
+        num (integer): A zero indexed column index
+    """
+
+    if type(col_name) != str:
+        # is not a string
+        raise TypeError
+    elif len(col_name.replace(" ", "")) != len(col_name):
+        # contains spaces
+        raise ValueError
+    elif len(col_name) > 3:
+        # too long to be an excel column name
+        raise ValueError
+
+    num = 0
+    for ltr in col_name:
+        if ltr in string.ascii_letters:
+            num = num * 26 + (ord(ltr.upper()) - ord('A')) + 1
+    num = num - 1
+    return (num)
