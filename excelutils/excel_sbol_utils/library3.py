@@ -23,7 +23,7 @@ def addToDescription(rowobj):
 		current = ""
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
-		if isinstance(val, str):
+		if isinstance(val, str): 
 			current = current + "\n" + col + ": " + val
 		else:
 			raise TypeError(f"A multicolumn value was unexpectedly given in addToDescription, {rowobj.col_cell_dict}")
@@ -64,7 +64,7 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 
 	if 'backbone' in rowobj.col_cell_dict:
 		temp = sbol3.Component(identity=f'{rowobj.obj.displayId}_ins_template', types=sbol3.SBO_DNA, name=f'{rowobj.obj.displayId}_ins_template')
-		newobj = sbol3.CombinatorialDerivation(identity=f'{rowobj.obj.displayId}_ins', template=temp, name=f'{rowobj.obj.displayId}_ins')
+		newobj = sbol3.CombinatorialDerivation(identity=f'{rowobj.obj.displayId}_ins', template=temp, name=f'{rowobj.obj.displayId}_ins', strategy=sbol3.SBOL_ENUMERATE)
 		rowobj.doc.add(temp)
 		rowobj.doc.add(newobj)
 		rowobj.obj_dict[temp.display_id] = {'uri': temp.type_uri, 'object': temp,
@@ -86,71 +86,61 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		# self.obj.compile(assembly_method=None)
 
 	elif isinstance(rowobj.obj, sbol3.combderiv.CombinatorialDerivation):
-		# Adding in the localSubComponent if combDev
-		localsub = sbol3.LocalSubComponent(types=sbol3.SBO_DNA, name="Inserted Construct")
+		variant_comps = []
+		comp_ind = 0
 		
 		if back:
 			tempObj = rowobj.obj_dict[f'{oldobj.display_id}_template']['object']
+			sub = sbol3.LocalSubComponent(types=sbol3.SBO_DNA, name="Inserted construct")
+			tempObj.features.append(sub)
+			backbone_sub = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=sub, variant_derivations=rowobj.obj)
+			oldobj.variable_features.append(backbone_sub)
+
+			subComp = sbol3.SubComponent(instance_of=rowobj.obj_dict[backbones[0]]['object'])
+			rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].features.append(subComp)
+			constr1 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=subComp, subject=sub)
+			constr2 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=sub, subject=subComp)
+			rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr1)
+			rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr2)
+		
 		else:
-			tempObj = rowobj.obj_dict[f'{rowobj.obj.display_id}_template']['object']
-			
-		tempObj.features.append(localsub)
+			temp = rowobj.obj_dict[f'{rowobj.obj.display_id}_template']['object']
 
 		comp_list = subcomps
-		comp_ind = 0
-		variant_comps = {}
+		
 		for ind, comp in enumerate(comp_list):
 			if "," in comp or type(rowobj.obj_dict[comp]['object']) == \
 									sbol3.combderiv.CombinatorialDerivation:
-				comp_list[ind] = f'{rowobj.obj.display_id}_subcomponent_{comp_ind}'
-				if back:
-					uri = f'{oldobj.display_id}_template/LocalSubComponent1'
-				else:
-					uri = 'foo'
-				sub_comp = sbol3.Component(uri, sbol3.SBO_DNA)
-				# sub_comp.displayId = f'{rowobj.obj.display_id}_subcomponent_{comp_ind}'
-				# rowobj.doc.add(sub_comp)
-				variant_comps[f'subcomponent_{comp_ind}'] = {'object': sub_comp, 'variant_list': comp}
+				tempLocalSub = sbol3.LocalSubComponent(name=f"Part {comp_ind + 1}", orientation=sbol3.SBOL_INLINE, types=sbol3.SBO_DNA)
+				temp.features.append(tempLocalSub)
+				variant_comps.append(tempLocalSub)
+				varFeature = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=f'{sbol3.get_namespace()}/{temp.display_id}/{tempLocalSub.display_id}')
+				for part in comp.split(", "):
+					varFeature.variants.append(f'{sbol3.get_namespace()}{helpers.check_name(part)}')
+				rowobj.obj.variable_features.append(varFeature)
+				if comp_ind != 0:
+					constr = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=tempLocalSub, subject=variant_comps[comp_ind -1])
+					temp.constraints.append(constr)
+				
+				comp_ind += 1
+			else:
+				tempSub = sbol3.SubComponent(name=f'Part {comp_ind}', instance_of=f'{rowobj.obj_dict[comp]["uri"]}', orientation=sbol3.SBOL_INLINE)
+				temp.features.append(tempSub)
+				variant_comps.append(tempSub)
+				if comp_ind != 0:
+					constr = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=tempSub, subject=variant_comps[comp_ind -1])
+					temp.constraints.append(constr)
 				comp_ind += 1
 
 		if 'backbone' in rowobj.col_cell_dict:
 			template = temp
-			var_feat = {'object': rowobj.obj}
-			var_c = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variant_derivations=var_feat['object'], \
-						variable=f'{rowobj.obj.namespace}{rowobj.obj.display_id}_template/LocalSubComponent1')
-			oldobj.variable_features.append(var_c)
-			nameOfTemplate = f'{oldobj.template}'
-			for i in range(len(backbones)):
-				subComp = sbol3.SubComponent(instance_of=rowobj.obj_dict[backbones[i]]['object'])
-				rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].features.append(subComp)
-			rowobj.obj_dict[nameOfTemplate[len(sbol3.get_namespace()):]]['object'].constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, \
-				f'{rowobj.obj.namespace}{oldobj.display_id}_template/LocalSubComponent1', f'{rowobj.obj.namespace}{oldobj.display_id}_template/SubComponent1'))
-			rowobj.obj_dict[nameOfTemplate[len(sbol3.get_namespace()):]]['object'].constraints.append(sbol3.Constraint(sbol3.SBOL_MEETS, \
-				f'{rowobj.obj.namespace}{oldobj.display_id}_template/SubComponent1', f'{rowobj.obj.namespace}{oldobj.display_id}_template/LocalSubComponent1'))
+			
 		else:
 			template = rowobj.obj_dict[f'{rowobj.obj.display_id}_template']['object']
 
-		for sub in comp_list:
-			name = f'{sbol3.get_namespace()}{helpers.check_name(sub)}'
-			sub_part = sbol3.SubComponent(name)
-			template.features.append(sub_part)
-		# template.assemblePrimaryStructure(comp_list)
-		# template.compile(assembly_method=None)
 		if constraints:
 			for constraint in c_list:
 				template.constraints.append(constraint)
-
-		rowobj.obj.masterTemplate = template
-		for var in variant_comps:
-			var_comp = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE,
-												variable=f'var_{var}')
-			var_comp.displayId = f'var_{var}'
-			var_comp.variable = variant_comps[var]['object']
-
-			var_list = re.split(",", variant_comps[var]['variant_list'])
-			var_list = [f'{sbol3.get_namespace()}{helpers.check_name(x.strip())}' for x in var_list]
-			var_comp.variants = var_list
-			rowobj.obj.variable_features.append(var_comp)
 
 	else:
 		raise KeyError(f'The object type "{type(rowobj.obj)}" does not allow subcomponents. (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, sbol term dict:{rowobj.col_cell_dict})')
