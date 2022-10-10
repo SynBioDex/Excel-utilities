@@ -1,6 +1,6 @@
 import re
 import string
-import openpyxl as opxl
+from openpyxl.worksheet import cell_range, worksheet
 from pathlib import Path
 
 def check_name(nm_to_chck):
@@ -95,9 +95,9 @@ def col_to_num(col_name):
     elif len(col_name) > 3:
         # too long to be an excel column name
         raise ValueError
-    return opxyl.worksheet.cell_range.range_boundaries(f'{column_letter}1')[0]
+    return worksheet.cell_range.range_boundaries(f'{column_letter}1')[0]
 
-def row_ends(sheet: opxl.worksheet, row: int, min_col: int = 1) -> int:
+def row_ends(sheet: worksheet, row: int, min_col: int = 1) -> int:
     """Find the column at which a row ends
     :param sheet: Sheet to search
     :param row: Row to search
