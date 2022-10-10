@@ -95,7 +95,7 @@ def col_to_num(col_name):
     elif len(col_name) > 3:
         # too long to be an excel column name
         raise ValueError
-    return cell_range.range_boundaries(f'{column_letter}1')[0]
+    return cell_range.range_boundaries(f'{col_name}1')[0]
 
 def row_ends(sheet: worksheet, row: int, min_col: int = 1) -> int:
     """Find the column at which a row ends
