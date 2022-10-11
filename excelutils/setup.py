@@ -10,5 +10,5 @@ setup(name='excel-sbol-utils',
       description='help convert excel resources into sbol',
       packages=find_packages(include=['excel_sbol_utils']),
       long_description=open('README.md').read(),
-      install_requires=[],
+      install_requires=['sbol3>=1.0.1'],
       zip_safe=False)
