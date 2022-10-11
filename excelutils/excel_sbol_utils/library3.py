@@ -173,6 +173,7 @@ def dataSource(rowobj):
 		else:
 			ns = datasource_dict[pref]['Namespace']
 			if len(ns) > 0:
+				print(rowobj.obj.display_id, ns, rowobj.doc_pref_terms)
 				rowobj.doc.change_object_namespace([rowobj.obj], ns)
 
 def sequence(rowobj):
