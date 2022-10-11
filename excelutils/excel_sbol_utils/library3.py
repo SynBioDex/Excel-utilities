@@ -153,16 +153,16 @@ def dataSource(rowobj):
 		pref = prefs[list(prefs.keys())[colnum]]
 		val = vals[list(vals.keys())[colnum]]
 
-		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'https://www.ncbi.nlm.nih.gov/nuccore'},
-				   'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE', 'Namespace':''},
-				   'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'http://parts.igem.org'},
-				   'AddGene':{'Replace Example':'https://www.addgene.org/{REPLACE_HERE}/', 'Literal Part':'FALSE', 'Namespace':''},
-				   'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'TRUE', 'Namespace':''},
-				   'Tax_id':{'Replace Example':'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={REPLACE_HERE}', 'Literal Part':'FALSE', 'Namespace':''},
-				   'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':''},
-				   'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE', 'Namespace':''},
-				   'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':''},
-				   'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':''}
+		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'https://www.ncbi.nlm.nih.gov/nuccore', 'Prefix':'gb'},
+				   'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
+				   'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'http://parts.igem.org', 'Prefix':'igem'},
+				   'AddGene':{'Replace Example':'https://www.addgene.org/{REPLACE_HERE}/', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
+				   'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''},
+				   'Tax_id':{'Replace Example':'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={REPLACE_HERE}', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
+				   'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''},
+				   'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
+				   'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''},
+				   'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''}
 						}
 
 		literal = datasource_dict[pref]['Literal Part']
@@ -173,6 +173,9 @@ def dataSource(rowobj):
 		else:
 			ns = datasource_dict[pref]['Namespace']
 			if len(ns) > 0:
+				if datasource_dict[pref]['Prefix'] not in rowobj.doc.pref_terms:
+					rowobj.doc.bind(datasource_dict[pref]['Prefix'], ns)
+					rowobj.doc.pref_terms.append(datasource_dict[pref]['Prefix'])
 				print(rowobj.obj.display_id, ns, rowobj.doc_pref_terms)
 				rowobj.doc.change_object_namespace([rowobj.obj], ns)
 
