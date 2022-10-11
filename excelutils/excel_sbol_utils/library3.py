@@ -169,12 +169,11 @@ def dataSource(rowobj):
 
 		if literal == 'FALSE':
 			rowobj.obj.wasDerivedFrom = val
+
+		else:
 			ns = datasource_dict[pref]['Namespace']
 			if len(ns) > 0:
 				rowobj.doc.change_object_namespace([rowobj.obj], ns)
-
-		else:
-			logging.warning('Literal data sources are not yet supported.')
 
 def sequence(rowobj):
 	for col in rowobj.col_cell_dict.keys():
