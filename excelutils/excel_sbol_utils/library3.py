@@ -2,7 +2,7 @@ from hashlib import new
 import re
 import logging
 import sbol3
-import sys
+import warnings
 import excel_sbol_utils.helpers as helpers
 
 
@@ -80,7 +80,7 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 	# if type is compdef do one thing, if combdev do another, else error
 	if isinstance(rowobj.obj, sbol3.component.Component):
 		for sub in subcomps:
-			sub_part = sbol3.SubComponent(f'{sbol3.get_namespace()}{sub}')
+			sub_part = sbol3.SubComponent(f'{sbol3.get_namespace()}/{sub}')
 			rowobj.obj.features.append(sub_part)
 		# self.obj.assemblePrimaryStructure(self.cell_val)
 		# self.obj.compile(assembly_method=None)
@@ -116,7 +116,7 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 				variant_comps.append(tempLocalSub)
 				varFeature = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=f'{sbol3.get_namespace()}/{temp.display_id}/{tempLocalSub.display_id}')
 				for part in comp.split(", "):
-					varFeature.variants.append(f'{sbol3.get_namespace()}{helpers.check_name(part)}')
+					varFeature.variants.append(f'{sbol3.get_namespace()}/{helpers.check_name(part)}')
 				rowobj.obj.variable_features.append(varFeature)
 				if comp_ind != 0:
 					constr = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=tempLocalSub, subject=variant_comps[comp_ind -1])
@@ -173,11 +173,24 @@ def dataSource(rowobj):
 		else:
 			ns = datasource_dict[pref]['Namespace']
 			if len(ns) > 0:
-				if datasource_dict[pref]['Prefix'] not in rowobj.doc.pref_terms:
+				if datasource_dict[pref]['Prefix'] not in rowobj.doc_pref_terms:
 					rowobj.doc.bind(datasource_dict[pref]['Prefix'], ns)
-					rowobj.doc.pref_terms.append(datasource_dict[pref]['Prefix'])
-				print(rowobj.obj.display_id, ns, rowobj.doc_pref_terms)
+					rowobj.doc_pref_terms.append(datasource_dict[pref]['Prefix'])
+				
+				old_id = rowobj.obj.identity
 				rowobj.doc.change_object_namespace([rowobj.obj], ns)
+				new_id = rowobj.obj.identity
+				rowobj.data_source_id_to_update[old_id] = new_id
+				if val != rowobj.obj.display_id:
+					# rowobj.data_source_id_to_update[rowobj.obj.identity] = {'current_id': rowobj.obj.display_id,
+					# 													'update_id': val}
+					new_identity = str(rowobj.obj.identity).replace(rowobj.obj.display_id, helpers.check_name(val))
+					id_map = {rowobj.obj.identity:new_identity}
+					# print(str(id_map))
+					rowobj.obj.set_identity(new_identity)
+					rowobj.obj.update_all_dependents(id_map) # this function doesn't yet do everything it should
+					warnings.warn('not yet possible to have display id that is different from source value')
+					rowobj.data_source_id_to_update[old_id] = new_identity
 
 def sequence(rowobj):
 	for col in rowobj.col_cell_dict.keys():
