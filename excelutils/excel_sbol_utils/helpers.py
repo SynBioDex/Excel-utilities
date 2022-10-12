@@ -1,5 +1,6 @@
 import re
 import string
+import rdflib
 from openpyxl.worksheet import cell_range, worksheet
 from pathlib import Path
 
@@ -146,3 +147,52 @@ def read_variant_table(excel_file: Path) -> tuple[str, str, list[list]]:
     variant_lists = [[v for v in column if v] for column in column_iterator]  # drop the empty cells from each range
 
     return library_name, base_sequence, variant_lists
+
+def update_uri_refs(doc, update_dict, use_derived=True, derived_ls = ['_sequence']):
+    """
+    This updates a set of referenced uris (may be a namespace or identity update)
+
+    Args:
+        doc (SBOL3 Document): document to be updated
+        update_dict (dict): dictionary of the form {old_uri:new_uri}
+        use_derived (bool, optional): Whether or not to also update derived uris. Defaults to True.
+        derived_ls (list, optional): List of derivations e.g. also version of the uri
+                                     with _sequence added to the end. Defaults to ['_sequence'].
+
+    Returns:
+        doc (SBOL3 Document): updated document
+    """
+    # create all the additional uris that will need to be updated
+    derived_keys = []
+    for deriv in derived_ls:
+        der_update = [f'{x}{deriv}' for x in  update_dict.keys()]
+        derived_keys.extend(der_update)
+
+    # pull the graph from the document
+    g = doc.graph()
+    for index, (subject, predicate, _object) in enumerate(g):
+        # if the object is one of the items to be updated do so
+        if str(_object) in update_dict:
+            g.remove((subject, predicate, _object))
+            new = rdflib.URIRef(update_dict[str(_object)])
+            g.add((subject, predicate, new))
+        # update any derived objects
+        elif use_derived and str(_object) in derived_keys:
+            suffix = str(_object).split('_')[-1]  # assumes suffix starts with '_'
+            suffix = f'_{suffix}'
+            g.remove((subject, predicate, _object))
+            old = str(_object)
+            new = f"{update_dict[old.replace(suffix, '')]}{suffix}"
+            new = rdflib.URIRef(new)
+            g.add((subject, predicate, new))
+        # update any derived subjects
+        if use_derived and str(subject) in derived_keys:
+            suffix = str(subject).split('_')[-1]  # assumes suffix starts with '_'
+            suffix = f'_{suffix}'
+            g.remove((subject, predicate, _object))
+            old = str(subject)
+            new = f"{update_dict[old.replace(suffix, '')]}{suffix}"
+            new = rdflib.URIRef(new)
+            g.add((new, predicate, _object))
+    doc._parse_graph(g)
+    return doc

@@ -154,12 +154,13 @@ def dataSource(rowobj):
 		val = vals[list(vals.keys())[colnum]]
 
 		datasource_dict = {'GenBank':{'Replace Example':'https://www.ncbi.nlm.nih.gov/nuccore/{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'https://www.ncbi.nlm.nih.gov/nuccore', 'Prefix':'gb'},
-				   'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
+				   'PubMed':{'Replace Example':'https://pubmed.ncbi.nlm.nih.gov/{REPLACE_HERE}/', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':'', 'derived_from':''},
 				   'iGEM registry':{'Replace Example':'http://parts.igem.org/Part:{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'http://parts.igem.org', 'Prefix':'igem'},
 				   'AddGene':{'Replace Example':'https://www.addgene.org/{REPLACE_HERE}/', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
 				   'Seva plasmids':{'Replace Example':'http://www.sevahub.es/public/Canonical/{REPLACE_HERE}/1', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''},
 				   'Tax_id':{'Replace Example':'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={REPLACE_HERE}', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
 				   'SynBioHub':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''},
+				   'URL':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'FALSE', 'Namespace':val, 'Prefix':'', 'derived_from':f'{val}/{rowobj.obj.displayId}'},
 				   'Local Sequence File':{'Replace Example':'', 'Literal Part':'FALSE', 'Namespace':'', 'Prefix':''},
 				   'URL for GenBank file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''},
 				   'URL for FASTA file':{'Replace Example':'{REPLACE_HERE}', 'Literal Part':'TRUE', 'Namespace':'', 'Prefix':''}
@@ -168,28 +169,37 @@ def dataSource(rowobj):
 		literal = datasource_dict[pref]['Literal Part']
 
 		if literal == 'FALSE':
-			rowobj.obj.wasDerivedFrom = val
+			if len(datasource_dict[pref]['derived_from']) > 0:
+				rowobj.obj.derived_from = [datasource_dict[pref]['derived_from']]
+			ns = datasource_dict[pref]['Namespace']
+			if len(ns) > 0:
+				if len(datasource_dict[pref]['Prefix']) > 0:
+					if datasource_dict[pref]['Prefix'] not in rowobj.doc_pref_terms:
+						rowobj.doc.bind(datasource_dict[pref]['Prefix'], ns)
+						rowobj.doc_pref_terms.append(datasource_dict[pref]['Prefix'])
+				
+				old_id = rowobj.obj.identity
+				rowobj.doc.change_object_namespace([rowobj.obj], ns)
+				new_id = rowobj.obj.identity
+				rowobj.data_source_id_to_update[old_id] = new_id
 
 		else:
 			ns = datasource_dict[pref]['Namespace']
 			if len(ns) > 0:
-				if datasource_dict[pref]['Prefix'] not in rowobj.doc_pref_terms:
-					rowobj.doc.bind(datasource_dict[pref]['Prefix'], ns)
-					rowobj.doc_pref_terms.append(datasource_dict[pref]['Prefix'])
+				if len(datasource_dict[pref]['Prefix']) > 0:
+					if datasource_dict[pref]['Prefix'] not in rowobj.doc_pref_terms:
+						rowobj.doc.bind(datasource_dict[pref]['Prefix'], ns)
+						rowobj.doc_pref_terms.append(datasource_dict[pref]['Prefix'])
 				
 				old_id = rowobj.obj.identity
 				rowobj.doc.change_object_namespace([rowobj.obj], ns)
 				new_id = rowobj.obj.identity
 				rowobj.data_source_id_to_update[old_id] = new_id
 				if val != rowobj.obj.display_id:
-					# rowobj.data_source_id_to_update[rowobj.obj.identity] = {'current_id': rowobj.obj.display_id,
-					# 													'update_id': val}
 					new_identity = str(rowobj.obj.identity).replace(rowobj.obj.display_id, helpers.check_name(val))
 					id_map = {rowobj.obj.identity:new_identity}
-					# print(str(id_map))
 					rowobj.obj.set_identity(new_identity)
 					rowobj.obj.update_all_dependents(id_map) # this function doesn't yet do everything it should
-					warnings.warn('not yet possible to have display id that is different from source value')
 					rowobj.data_source_id_to_update[old_id] = new_identity
 
 def sequence(rowobj):
