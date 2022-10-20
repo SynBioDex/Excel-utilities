@@ -13,6 +13,6 @@ doc.add(seq)
 
 comp.sequences = [seq]
 
-doc.change_object_namespace([seq], 'http://parts.igem.org')
+doc.change_object_namespace([seq], 'http://parts.igem.org', doc)
 
 doc.write(file_path_out)
