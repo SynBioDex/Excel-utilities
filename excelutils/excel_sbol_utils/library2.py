@@ -170,7 +170,7 @@ def dataSource(rowobj):
 		literal = datasource_dict[pref.lower()]['Literal Part']
 
 		if literal == 'FALSE':
-			rowobj.obj.wasDerivedFrom = datasource_dict[pref.lower()]['Replace Example'].replace('{REPLACE_HERE}', val)
+			rowobj.obj.wasDerivedFrom = datasource_dict[pref.lower()]['Replace Example'].replace('{REPLACE_HERE}', str(val))
 
 		else:
 			#replace_str = datasource_dict[pref]['Replace Example']
