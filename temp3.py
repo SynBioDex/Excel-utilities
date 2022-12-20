@@ -79,10 +79,15 @@ while len(parent_dict) > 0:
             # if len(child_types) == len(parent_dict[parent]): # Check to see that it's the end of the loop
             # Trying to see if it can be a collection object
             if len(children_of_parent) == 0: # Checking to see if there aren't any children and only contains a variable feature
-                parentObj = doc.find(parent)
-                if len(parentObj.variable_features) == 1: # If it only has 1 variable feature and nothing else - collection object
+                parentObj = doc.find(parent) # In template not in the parent
+                template = doc.find(f'{parent}_template') # Get the template object from the parent
 
-                    col = sbol3.Collection() 
+                if len(template.features) == 1: # If it only has 1 variable feature and nothing else - collection object
+
+                    if type(template.features[0]) == sbol3.VariableFeature:
+                        col = sbol3.Collection()
+
+
 
             
             if sbol3.CombinatorialDerivation not in children_of_parent: # If there is no child that is a combinatorial derivation
@@ -99,20 +104,53 @@ while len(parent_dict) > 0:
                 # print(parentObj._properties)
                 old_uris.append(parentObj.identity) # Add the uri of the old parent object to the list
 
-
                 componentObj = sbol3.Component(identity=parentObj.identity, types=parentObj.type_uri) # Create a new component object
 
                 new_uris.append(componentObj.identity) # Add its URI to the list of new uris
 
                 componentObj.name = parentObj.name # Set the name
 
-                for feature in template.features:
-                    print(feature._properties, '\n') # Test printing out all the properties of the current template
+                print(parentObj._properties)
 
-                # componentObj.features = template.features 
-                # Still need to find out how to attribute subcomponents, constraints, roles from combderiv to component
+                for feature in template.features:
+                    if type(feature) != sbol3.LocalSubComponent:
+                        subComp = sbol3.SubComponent(instance_of=feature.instance_of)
+                        componentObj.features.append(subComp) # 
+
+                for role in template.roles:
+                    componentObj.roles.append(role) 
+
+                # Still need to find out how to attribute subcomponents, constraints (Both subcomponents and constraints and roles in template)
+                for prop in parentObj._properties:
+                    for subProp in parentObj._properties[prop]:
+                        print(prop, type(subProp))
+                        
+                        if type(subProp) == rdflib.term.URIRef:
+                            setattr(componentObj, prop,
+                                    sbol3.URIProperty(componentObj,
+                                                    f'{prop}',
+                                                    '0', '*', initial_value=[subProp]))
+                        else:
+                            setattr(componentObj, prop,
+                                    sbol3.TextProperty(componentObj,
+                                                    prop,
+                                                    '0', '*', initial_value=str(subProp)))
+                
+                for constraint in template.constraints:
+                    print(constraint)
+                    newConstraint = sbol3.Constraint(constraint.restriction, constraint.subject, constraint.object)
+                    newConstraint.derived_from = constraint.derived_from
+                    componentObj.constraints.append(newConstraint)
+                    # Add all to component
+                    # Eventually should be more filtered
+
+                componentObj.types[0] = sbol3.component.SBOL_COMPONENT
+                print(componentObj._properties)
+
 
                 doc.remove_object(parentObj) # Remove the old object
+                doc.remove_object(template) # Remove the old template
+
                 doc.add(componentObj) # Add the new object
                     
         # print(child, parent_dict_copy[child])
@@ -129,5 +167,7 @@ while len(parent_dict) > 0:
 
     # update child_only list
     child_only = children - set(parent_dict).intersection(children)
+
+    # Update uris on document using the old uri and new uri comparison
 
 # return updated sbol document
