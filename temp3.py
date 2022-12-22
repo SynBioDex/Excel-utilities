@@ -1,6 +1,7 @@
 import rdflib
 import os
 import sbol3
+import excel_sbol_utils.helpers as h
 
 direct = os.path.split(__file__)[0]
 file_path_in = os.path.join(direct, 'SBOL3_simple_library4.nt')
@@ -169,7 +170,12 @@ while len(parent_dict) > 0:
     # update child_only list
     child_only = children - set(parent_dict).intersection(children)
 
-    # Update uris on document using the old uri and new uri comparison
+# Update uris on document using the old uri and new uri comparison
+oldToNew = {}
+for i in range(len(old_uris)):
+    oldToNew[old_uris[i]] = new_uris[i]
+    
+# h.update_uri_refs(doc, oldToNew) # Still needs to be completed
 
 # return updated sbol document
 file_path_out = "SampleTemp3Output.nt"
