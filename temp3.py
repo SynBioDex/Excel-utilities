@@ -123,7 +123,8 @@ while len(parent_dict) > 0:
                 # Still need to find out how to attribute subcomponents, constraints (Both subcomponents and constraints and roles in template)
                 for prop in parentObj._properties:
                     for subProp in parentObj._properties[prop]:
-                        print(prop, type(subProp))
+                        if prop == "http://sbols.org/v3#template":
+                            continue
                         
                         if type(subProp) == rdflib.term.URIRef:
                             setattr(componentObj, prop,
@@ -137,7 +138,6 @@ while len(parent_dict) > 0:
                                                     '0', '*', initial_value=str(subProp)))
                 
                 for constraint in template.constraints:
-                    print(constraint)
                     newConstraint = sbol3.Constraint(constraint.restriction, constraint.subject, constraint.object)
                     newConstraint.derived_from = constraint.derived_from
                     componentObj.constraints.append(newConstraint)
@@ -145,6 +145,7 @@ while len(parent_dict) > 0:
                     # Eventually should be more filtered
 
                 componentObj.types[0] = sbol3.component.SBOL_COMPONENT
+
                 print(componentObj._properties)
 
 
@@ -171,3 +172,5 @@ while len(parent_dict) > 0:
     # Update uris on document using the old uri and new uri comparison
 
 # return updated sbol document
+file_path_out = "SampleTemp3Output.nt"
+doc.write(file_path_out)
