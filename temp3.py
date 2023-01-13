@@ -83,10 +83,18 @@ while len(parent_dict) > 0:
                 parentObj = doc.find(parent) # In template not in the parent
                 template = doc.find(f'{parent}_template') # Get the template object from the parent
 
-                if len(template.features) == 1: # If it only has 1 variable feature and nothing else - collection object
+                if len(template.features) == 1 and type(template.features[0]) == sbol3.VariableFeature: # If it only has 1 variable feature and nothing else - collection object
+                    col = sbol3.Collection()
+                    for variant in template.features[0]: # Add all variants of the variable feature to the collection
+                        col.members.append(variant)
 
-                    if type(template.features[0]) == sbol3.VariableFeature:
-                        col = sbol3.Collection()
+                    # Delete original comb der + template after adding in uris to appropriate arrays
+                    old_uris.append(parentObj.identity)
+                    new_uris.append(col.identity)
+
+                    doc.remove_object(parentObj)
+                    doc.remove_object(template)
+
 
 
 
@@ -175,7 +183,7 @@ oldToNew = {}
 for i in range(len(old_uris)):
     oldToNew[old_uris[i]] = new_uris[i]
     
-# h.update_uri_refs(doc, oldToNew) # Still needs to be completed
+h.update_uri_refs(doc, oldToNew) 
 
 # return updated sbol document
 file_path_out = "SampleTemp3Output.nt"
