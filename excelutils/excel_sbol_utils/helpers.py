@@ -2,6 +2,7 @@ import re
 import string
 import rdflib
 from openpyxl.worksheet import cell_range, worksheet
+from openpyxl import load_workbook
 from pathlib import Path
 
 def check_name(nm_to_chck):
@@ -21,6 +22,9 @@ def check_name(nm_to_chck):
         # replace special characters with numbers
         for ltr in nm_to_chck:
             if ord(ltr) == 32:
+                nm_to_chck = nm_to_chck.replace(ltr, "_")
+            elif ord(ltr) == 45:
+                # Allow hyphens to be reinterpreted as underscores
                 nm_to_chck = nm_to_chck.replace(ltr, "_")
             elif ord(ltr) > 122 or ord(ltr) < 48:
                 # 122 is the highest decimal code number
@@ -124,7 +128,7 @@ def read_variant_table(excel_file: Path) -> tuple[str, str, list[list]]:
     LAST_VARIANT_ROW = 35
     
     print(f'Loading workbook "{excel_file}"')
-    work_book = openpyxl.load_workbook(excel_file, data_only=True)
+    work_book = load_workbook(excel_file, data_only=True)
     sheet = work_book[VARIANTS_SHEET]
 
     # First, get the library name
@@ -133,7 +137,7 @@ def read_variant_table(excel_file: Path) -> tuple[str, str, list[list]]:
 
     # Then get the base sequence
     print('Extracting base sequence')
-    first_aa_column = get_column_number(FIRST_AMINO_ACID_COLUMN)
+    first_aa_column = col_to_num(FIRST_AMINO_ACID_COLUMN)
     last_aa_column = row_ends(sheet, ORIGINAL_AMINO_ACID_ROW, first_aa_column)
     # Get row from sheet and concatenate it into a string
     row_iterator = sheet.iter_rows(min_row=ORIGINAL_AMINO_ACID_ROW, max_row=ORIGINAL_AMINO_ACID_ROW,
