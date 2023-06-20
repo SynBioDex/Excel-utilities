@@ -218,11 +218,11 @@ def sequence(rowobj):
 
 				# removes spaces, enters, and makes all lower case
 				val = "".join(val.split())
-				val = val.replace(u"\ufeff", "").lower()
+				val = val.replace(u"\ufeff", "").upper()
 
 				# create sequence object
-				sequence = sbol3.Sequence(f"{rowobj.obj.displayId}_sequence",
-										elements=val)
+				sequence = sbol3.Sequence(f"{rowobj.obj.namespace}/{rowobj.obj.display_id}_sequence",
+										elements=val, encoding=sbol3.IUPAC_DNA_ENCODING, namespace=rowobj.obj.namespace)
 				if rowobj.obj.name is not None:
 					sequence.name = f"{rowobj.obj.name} Sequence"
 
