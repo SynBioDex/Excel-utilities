@@ -6,10 +6,248 @@ import excel_sbol_utils.helpers as h
 direct = os.path.split(__file__)[0]
 file_path_in = os.path.join(direct, 'SBOL3_simple_library4.nt')
 
+# Purpose: After converting the combinatorial derivations, the references to the objects in other parts must be updated
+# Input: SBOL3 Document object, SBOL3 Dictionary of combinatorial derivations after conversion
+# Output: Updated SBOL3 Document object
+
+def updateVariableFeatures(doc, combdev):
+    # 1: Loop through every item in the combdev dictionary
+    for item in combdev:
+        # 2 Cases: Has a backbone and therefore variable features located in insert, or located inside the original object
+        convVar = []
+        ins = True # If the object has an insert
+        edited = False # If the variable features are edited 
+
+        insert = item + "_ins"
+        obj = doc.find(insert)
+
+        if obj == None:
+            ins = False
+            obj = doc.find(item)
+
+        if ins:
+            template = doc.find(f'{insert}_template')
+        else:
+            template = doc.find(f'{item}_template')
+
+
+        # 2: Go through every variable feature
+        for variable_feature in list(obj.variable_features):
+
+            if len(variable_feature.variants) > 1:
+                continue # Leave as a variable feature
+            else:
+                variant = variable_feature.variants[0]
+                if str(variant) not in combdev:
+                    edited = True
+
+                    # 1. Using the variable of the variable feature, find the local subcomponent in the template and retrieve the part number
+
+                    localsub = doc.find(variable_feature.variable)
+
+                    tempsub = sbol3.SubComponent(instance_of=variant, name=localsub.name, orientation=sbol3.SBOL_INLINE)
+
+                    # Add the subcomponent to the template
+
+                    template.features.append(tempsub)
+
+                    # Change the constriant to the subcomponent
+
+                    for constraint in template.constraints:
+                        if constraint.subject == variable_feature.variable:
+                            constraint.subject = tempsub.identity
+                        if constraint.object == variable_feature.variable:
+                            constraint.object = tempsub.identity
+
+                    # Remove the localsubcomponent and the variable feature
+
+                    template.features.remove(localsub)
+                    obj.variable_features.remove(variable_feature)
+
+
+        if edited:
+            
+
+            localsubs = [None] * 100 # Used for relabeling
+            subs = [None] * 100 # subcomponents
+            variableFeatures = {}
+            copiedVariableFeatures = [None] * 100
+            partsToFeatures = {}
+
+            # Go through remaining variable features and create a dictionary with key = list of variants and value = part # of variants
+            # From this, delete the variable features and add their copies back to their template
+            # Then delete the original variable, and add the new variable based on the variants
+
+            for variable_feature in list(obj.variable_features):
+                variants = []
+                for variant in variable_feature.variants:
+                    variants.append(str(variant))
+                variants = tuple(variants)
+
+                # Now find the part number from the variable
+
+                localsub = doc.find(variable_feature.variable)
+
+                number = int(localsub.name.split(" ")[1])
+                variableFeatures[variants] = number
+
+                # Copy the variable features and add them to copiedVariableFeatures
+
+                copyFeature = sbol3.VariableFeature(variants=variable_feature.variants, name=variable_feature.name, variable=variable_feature.variable, cardinality=variable_feature.cardinality)
+                copiedVariableFeatures[number] = copyFeature
+
+                # Remove the variable feature from the object
+
+                obj.variable_features.remove(variable_feature)
+
+                # Update the references
+
+
+            # Add the copied variable features back to the template
+
+            for var in copiedVariableFeatures:
+                if var != None:
+                    obj.variable_features.append(var)
+
+
+            for feature in list(template.features):
+                if type(feature) == sbol3.LocalSubComponent:
+                    copyFeature = sbol3.LocalSubComponent(types=feature.type_uri, name=feature.name, orientation=feature.orientation)
+                    localsubs[int(feature.name.split(" ")[1])] = copyFeature
+                    template.features.remove(feature)
+                elif type(feature) == sbol3.SubComponent:
+                    copyFeature = sbol3.SubComponent(instance_of=feature.instance_of, name=feature.name, orientation=feature.orientation)
+                    subs[int(feature.name.split(" ")[1])] = copyFeature
+                    template.features.remove(feature)
+                
+
+            for item in localsubs:
+                if item != None:
+                    template.features.append(item)
+
+            for item in subs:
+                if item != None:
+                    template.features.append(item)
+
+            # Fix variable features to reference the correct localsubcomponent
+
+            for variable_feature in list(obj.variable_features):
+                variants = []
+                for variant in variable_feature.variants:
+                    variants.append(str(variant))
+                
+                variants = tuple(variants)
+
+                number = variableFeatures[variants]
+
+                for feature in list(template.features):
+                    if type(feature) == sbol3.LocalSubComponent:
+                        if int(feature.name.split(" ")[1]) == number:
+                            variable_feature.variable = feature.identity
+                            break
+
+            # Fix all of the constraints
+            
+            # Go through every subcomponent and localsubcomponent and do key: part #, value = displayID
+
+            for feature in list(template.features):
+                if type(feature) == sbol3.LocalSubComponent:
+                    partsToFeatures[int(feature.name.split(" ")[1])] = feature.identity
+                elif type(feature) == sbol3.SubComponent:
+                    partsToFeatures[int(feature.name.split(" ")[1])] = feature.identity
+
+            # Delete all constraints
+
+            template.constraints.clear()
+
+            # Add constraints one by one with part 1 being the subject and part 2 being the object until the end of the dictionary
+
+            part = 1
+            while part < len(partsToFeatures):
+                constraint = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, subject=partsToFeatures[part], object=partsToFeatures[part + 1])
+                template.constraints.append(constraint)
+                part += 1
+
+            # Clear the part # from the subcomponents
+
+            for feature in list(template.features):
+                if type(feature) == sbol3.SubComponent:
+                    del feature._properties[sbol3.SBOL_NAME]
+
+
+
+
+    return None
+
+
+# Purpose: Update the uri references in the LinearDNAProducts to the _ins versions of the parts
+# Input: SBOL3 document object
+# Output: SBOL3 document object with updated references
+
+def updateLinearDNAProducts(doc):
+    # Go through every object in the doc
+    # If it's a collection, then check if it's the LinearDNAProducts collection
+    # For every member, get the identity, then replace it with the _ins version of the part
+    
+    for obj in doc.objects:
+        if type(obj) == sbol3.Collection:
+            if obj.display_id == 'LinearDNAProducts':
+                tempList = []
+                for member in obj.members:
+                    mem = doc.find(member)
+                    memberid = mem.identity
+                    insConstruct = doc.find(memberid + "_ins")
+                    displah_id = insConstruct.identity
+                    tempList.append(displah_id)
+                obj.members = tempList
+
+    return doc
+
+
+# Purpose: Update the collection names for basic parts and composite parts
+# Input: SBOL3 document object
+# Output: SBOL3 document object with updated collection names
+
+def updateCollectionNames(doc):
+    # Change the basic parts collection name to basicparts (if it exists)
+
+    # Lists to go through to either add or take off of the document once completed
+    removeList = []
+    addList = []
+
+    for obj in doc.objects:
+        if type(obj) == sbol3.Collection:
+
+            # Set the namespace for sbol3 so that the collections contain the correct namespace and are named correctly
+            sbol3.set_namespace(obj.namespace)
+
+            if obj.display_id == 'Basic_Parts':
+                newCollection = sbol3.Collection(identity='BasicParts', name=obj.name, members=obj.members, description=obj.description)
+
+                removeList.append(obj)
+                addList.append(newCollection)
+
+            elif obj.display_id == 'Composite_Parts':
+                newCollection = sbol3.Collection(identity='CompositeParts', name=obj.name, members=obj.members, description=obj.description)
+
+                removeList.append(obj)
+                addList.append(newCollection)
+    
+    for item in removeList:
+        doc.remove_object(item)
+
+    for item in addList:
+        doc.add(item)
+
+    return doc
+
+                
+            
+
+
 # Purpose: To convert combinatorial derivation objects to component objects if necessary
 # Input: SBOL3 file reference
 # Output: SBOL3 file in new path, updated document object
-
 
 def convCombDeriv(file_path_in):
     # read in the document as an rdf graph
@@ -74,17 +312,20 @@ def convCombDeriv(file_path_in):
         newComp.name = obj.name
         newComp.displayId = obj.display_id
         newComp.namespace = obj.namespace
+        newComp.roles = [sbol3.SO_ENGINEERED_REGION]
+        newComp.types = [sbol3.SBO_DNA]
+        newComp.description = obj.description
 
         # From template: features, constraints, type
         template = doc.find(f'{obj.identity}_template')
 
         for feature in template.features:
             if type(feature) != sbol3.LocalSubComponent:
-                subComp = sbol3.SubComponent(instance_of=feature.instance_of)
+                subComp = sbol3.SubComponent(instance_of=feature.instance_of, orientation=feature.orientation)
                 newComp.features.append(subComp)
 
         for constraint in template.constraints:
-            newConstraint = sbol3.Constraint(constraint.restriction, constraint.subject, constraint.object)
+            newConstraint = sbol3.Constraint(constraint.restriction, constraint.subject.replace('_template', ''), constraint.object.replace('_template', ''))
             newConstraint.derived_from = constraint.derived_from
             newComp.constraints.append(newConstraint)
 
@@ -102,7 +343,11 @@ def convCombDeriv(file_path_in):
     for item in newComponents:
         doc.add(newComponents[item])
 
-    # 7. Update the uri references
+    # 7. Update the variable features in each of the combinatorial derivation objects if there are conversions
+    if tempcombdev != combdev:
+        updateVariableFeatures(doc, combdev)
+
+    # 8. Update the uri references
     oldToNew = {}
 
     for item in tempcombdev:
@@ -115,179 +360,12 @@ def convCombDeriv(file_path_in):
 
 
 doc = convCombDeriv(file_path_in)
+doc = updateLinearDNAProducts(doc)
+doc = updateCollectionNames(doc)
 
 file_path_out = "SampleTemp3Output.nt"
-doc.write(file_path_out)
-
-
-
-# collect all the objects which are combinatorial derivations and their featured components
-
-# knows_query = """
-# SELECT
-#     ?subject
-#     ?object
-# WHERE {
-#     ?subject <http://sbols.org/v3#template> ?template .
-#     ?template <http://sbols.org/v3#hasFeature> ?feature .
-#     ?feature <http://sbols.org/v3#instanceOf> ?object .
-# }"""
-# qres = g.query(knows_query)
-
-# # create a tree structure
-# children = set() # all objects that are referenced by another object
-# parent_dict = {} # all objects that reference another object and the objects they reference as a set
-# for row in qres:
-#     s = str(row.subject)
-#     o = str(row.object)
-#     children.add(o)
-#     if s in parent_dict:
-#         parent_dict[s].add(o)
-#     else:
-#         parent_dict[s] = {o}
-
-# parent_dict_copy = parent_dict
-
-# # objects that are only children are objects that are not also parents
-# child_only = children - set(parent_dict).intersection(children)
-
-# # Loop through children create a dictionary for the object and the type of the object to look at in while loop
-# # Keep track of the old uris and new uris in case they change - function already exists to change in document
-
-# old_uris = [] # Correlates index to index with each of the new uris
-# new_uris = []
-
-# # process the children only objects and update the 'tree'
-# while len(parent_dict) > 0:
-#     # do something to deal with child_only
-#     # for this you probably need to read in the sbol document at the top and perform actions using pysbol
-
-#     # Import SBOL document as the SBOL document type
-#     # Go through each of the children and determine if it is a combinatorial derivation - may have to save a copy of the parent dictionary
-#     # Go through each of the uris in the child object and look to see if those uris in parent dictionary are combinatorial derivations - going to need pysbol
-#     # Take it out as a string and check what the type is in the object in the sbol document 
-#     # May have to write in another file for now
-#     # Object stays combinatorial derivation if one of its subcomponents is a combinatorial derivation
-#         # Else: Becomes a component
-#     # For collection: If has a variable feature and nothing else
-    
-#     # loop over parents
-
-#     for parent in parent_dict:
-#         if parent_dict[parent].issubset(child_only): # If the parent's children are a subset of childOnly
-#             # print(parent) # Print the name of the parent object
-#             child_types = [] # Create a list of all of the types of child objects
-#             for child in parent_dict[parent]:
-#                 children_of_parent = set()
-#                 obj = doc.find(child)
-#                 children_of_parent.add(type(obj))
-
-#             # if len(child_types) == len(parent_dict[parent]): # Check to see that it's the end of the loop
-#             # Trying to see if it can be a collection object
-#             if len(children_of_parent) == 0: # Checking to see if there aren't any children and only contains a variable feature
-#                 parentObj = doc.find(parent) # In template not in the parent
-#                 template = doc.find(f'{parent}_template') # Get the template object from the parent
-
-#                 if len(template.features) == 1 and type(template.features[0]) == sbol3.VariableFeature: # If it only has 1 variable feature and nothing else - collection object
-#                     col = sbol3.Collection()
-#                     for variant in template.features[0]: # Add all variants of the variable feature to the collection
-#                         col.members.append(variant)
-
-#                     # Delete original comb der + template after adding in uris to appropriate arrays
-#                     old_uris.append(parentObj.identity)
-#                     new_uris.append(col.identity)
-
-#                     doc.remove_object(parentObj)
-#                     doc.remove_object(template)
+doc.write(file_path_out, file_format="sorted nt")
 
 
 
 
-            
-#             if sbol3.CombinatorialDerivation not in children_of_parent: # If there is no child that is a combinatorial derivation
-#                 # Delete the template that's currently in the document
-#                 # Create a new component object and carry over all of the features from the combinatorial derivation (including exact name)
-#                     # Name, (references to) subcomponents, (references to) constraints, name, displayId, role, type
-#                 # Delete the previous combinatorial derivation object 
-#                 # Put the new component object into the document
-
-#                 parentObj = doc.find(parent) # Get the object that the parent is supposed to be
-
-#                 template = doc.find(f'{parent}_template') # Get the template object from the parent
-
-#                 # print(parentObj._properties)
-#                 old_uris.append(parentObj.identity) # Add the uri of the old parent object to the list
-
-#                 componentObj = sbol3.Component(identity=parentObj.identity, types=parentObj.type_uri) # Create a new component object
-
-#                 new_uris.append(componentObj.identity) # Add its URI to the list of new uris
-
-#                 componentObj.name = parentObj.name # Set the name
-
-#                 # print(parentObj._properties)
-
-#                 for feature in template.features:
-#                     if type(feature) != sbol3.LocalSubComponent:
-#                         subComp = sbol3.SubComponent(instance_of=feature.instance_of)
-#                         componentObj.features.append(subComp) # 
-
-#                 for role in template.roles:
-#                     componentObj.roles.append(role) 
-
-#                 # Still need to find out how to attribute subcomponents, constraints (Both subcomponents and constraints and roles in template)
-#                 for prop in parentObj._properties:
-#                     for subProp in parentObj._properties[prop]:
-#                         if prop == "http://sbols.org/v3#template":
-#                             continue
-                        
-#                         if type(subProp) == rdflib.term.URIRef:
-#                             setattr(componentObj, prop,
-#                                     sbol3.URIProperty(componentObj,
-#                                                     f'{prop}',
-#                                                     '0', '*', initial_value=[subProp]))
-#                         else:
-#                             setattr(componentObj, prop,
-#                                     sbol3.TextProperty(componentObj,
-#                                                     prop,
-#                                                     '0', '*', initial_value=str(subProp)))
-                
-#                 for constraint in template.constraints:
-#                     newConstraint = sbol3.Constraint(constraint.restriction, constraint.subject, constraint.object)
-#                     newConstraint.derived_from = constraint.derived_from
-#                     componentObj.constraints.append(newConstraint)
-#                     # Add all to component
-#                     # Eventually should be more filtered
-
-#                 componentObj.types[0] = sbol3.component.SBOL_COMPONENT
-
-#                 # print(componentObj._properties)
-
-
-#                 doc.remove_object(parentObj) # Remove the old object
-#                 doc.remove_object(template) # Remove the old template
-
-#                 doc.add(componentObj) # Add the new object
-                    
-#         # print(child, parent_dict_copy[child])
-
-#     # remove child only children from dictionary
-#     new_parent_dict = {}
-
-#     for key in parent_dict:
-#         current_children = parent_dict[key]
-#         remaining_children = current_children - current_children.intersection(child_only)
-#         if len(remaining_children) > 0:
-#             new_parent_dict[key] = remaining_children
-#     parent_dict = new_parent_dict
-
-#     # update child_only list
-#     child_only = children - set(parent_dict).intersection(children)
-
-# # Update uris on document using the old uri and new uri comparison
-# oldToNew = {}
-# for i in range(len(old_uris)):
-#     oldToNew[old_uris[i]] = new_uris[i]
-    
-# h.update_uri_refs(doc, oldToNew) 
-
-# return updated sbol document
