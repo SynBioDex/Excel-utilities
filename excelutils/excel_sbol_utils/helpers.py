@@ -26,6 +26,8 @@ def check_name(nm_to_chck):
             elif ord(ltr) == 45:
                 # Allow hyphens to be reinterpreted as underscores
                 nm_to_chck = nm_to_chck.replace(ltr, "_")
+            elif ord(ltr) == 46:
+                nm_to_chck = nm_to_chck.replace(ltr, "_")
             elif ord(ltr) > 122 or ord(ltr) < 48:
                 # 122 is the highest decimal code number
                 # for common latin ltrs or arabic numbers
