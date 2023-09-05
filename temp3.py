@@ -231,6 +231,18 @@ def updateCollectionNames(doc):
                 newCollection = sbol3.Collection(identity='CompositeParts', name=obj.name, members=obj.members, description=obj.description)
 
                 removeList.append(obj)
+                # Change components inside of the composite parts collection to their inserted construct if they have one
+
+                removeMember = []
+
+                for item in newCollection.members:
+                    if doc.find(item + "_ins") != None:
+                        removeMember.append(item)
+                        newCollection.members.append(item + "_ins")
+
+                for item in removeMember:
+                    newCollection.members.remove(item)
+                
                 addList.append(newCollection)
     
     for item in removeList:
@@ -240,7 +252,6 @@ def updateCollectionNames(doc):
         doc.add(item)
 
     return doc
-
                 
             
 
@@ -319,12 +330,22 @@ def convCombDeriv(file_path_in):
         # From template: features, constraints, type
         template = doc.find(f'{obj.identity}_template')
 
-        for feature in template.features:
+        # Need to go through the subcomponents in order from the previous template
+        # sort the subcomponents by the identity and then create a new list to run through it
+
+        sortedSubcomponents = sorted(template.features, key=lambda x: x.identity)
+
+        for feature in sortedSubcomponents:
             if type(feature) != sbol3.LocalSubComponent:
                 subComp = sbol3.SubComponent(instance_of=feature.instance_of, orientation=feature.orientation)
                 newComp.features.append(subComp)
 
-        for constraint in template.constraints:
+        # Attempt to sort the constraints in the same way as subcomponents
+
+        sortedConstraints = sorted(template.constraints, key=lambda x: x.identity)
+            
+
+        for constraint in sortedConstraints:
             newConstraint = sbol3.Constraint(constraint.restriction, constraint.subject.replace('_template', ''), constraint.object.replace('_template', ''))
             newConstraint.derived_from = constraint.derived_from
             newComp.constraints.append(newConstraint)
@@ -365,7 +386,3 @@ doc = updateCollectionNames(doc)
 
 file_path_out = "SampleTemp3Output.nt"
 doc.write(file_path_out, file_format="sorted nt")
-
-
-
-
