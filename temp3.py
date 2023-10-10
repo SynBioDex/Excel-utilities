@@ -112,7 +112,7 @@ def updateVariableFeatures(doc, combdev):
 
             for feature in list(template.features):
                 if type(feature) == sbol3.LocalSubComponent:
-                    copyFeature = sbol3.LocalSubComponent(types=feature.type_uri, name=feature.name, orientation=feature.orientation)
+                    copyFeature = sbol3.LocalSubComponent(types=feature.types, name=feature.name, orientation=feature.orientation)
                     localsubs[int(feature.name.split(" ")[1])] = copyFeature
                     template.features.remove(feature)
                 elif type(feature) == sbol3.SubComponent:
@@ -175,7 +175,7 @@ def updateVariableFeatures(doc, combdev):
                     del feature._properties[sbol3.SBOL_NAME]
 
 
-
+    # For every object in Composite parts collection:
 
     return None
 
@@ -251,6 +251,25 @@ def updateCollectionNames(doc):
     for item in addList:
         doc.add(item)
 
+    return doc
+
+# Go through the objects in the document and if they don't have a description, then add a blank
+# Input: Document object (sbol3)
+# Output: Document object with updated descriptions
+# NOT COMPLETE - NEED MORE SPECIFIC IMPLEMENTATION
+
+def updateDescriptions(doc):
+
+    for obj in doc.objects:
+        if type(obj) == sbol3.Collection:
+            for item in list(obj.members):
+                temp = doc.find(item)
+
+                if "_ins" in temp.name:
+                    continue
+                if temp.description == None:
+                    temp.description = ""
+        
     return doc
                 
             
@@ -383,6 +402,7 @@ def convCombDeriv(file_path_in):
 doc = convCombDeriv(file_path_in)
 doc = updateLinearDNAProducts(doc)
 doc = updateCollectionNames(doc)
+doc = updateDescriptions(doc)
 
 file_path_out = "SampleTemp3Output.nt"
 doc.write(file_path_out, file_format="sorted nt")
