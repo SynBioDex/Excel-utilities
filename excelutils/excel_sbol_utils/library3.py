@@ -3,7 +3,7 @@ import re
 import logging
 import sbol3
 import warnings
-import excel_sbol_utils.helpers as helpers
+import helpers as helpers
 
 
 def objectType(rowobj):
@@ -34,6 +34,7 @@ constraint_dict = {'same as': sbol3.SBOL_VERIFY_IDENTICAL,
                    'different from': sbol3.SBOL_DIFFERENT_FROM,
                    'same orientation as': sbol3.SBOL_SAME_ORIENTATION_AS,
                    'different orientation from': sbol3.SBOL_SAME_ORIENTATION_AS}
+
 def make_constraint(constraint, part_list, template):
     m = constraint_pattern.match(constraint)
     if not m:
@@ -63,16 +64,58 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 
 
 	if 'backbone' in rowobj.col_cell_dict:
-		temp = sbol3.Component(identity=f'{rowobj.obj.displayId}_ins_template', types=sbol3.SBO_DNA, name=f'{rowobj.obj.displayId}_ins_template')
-		newobj = sbol3.CombinatorialDerivation(identity=f'{rowobj.obj.displayId}_ins', template=temp, name=f'{rowobj.obj.displayId}_ins', strategy=sbol3.SBOL_ENUMERATE)
-		rowobj.doc.add(temp)
-		rowobj.doc.add(newobj)
-		rowobj.obj_dict[temp.display_id] = {'uri': temp.type_uri, 'object': temp,
-                                'displayId': temp.display_id}
-		backbones = list(rowobj.col_cell_dict['backbone'].values())
-		back = True
-		oldobj = rowobj.obj
-		rowobj.obj = newobj
+		# If this row has a backbone, create a new combinatorial derivation
+
+		# Determine if there are multiple comps per part
+		multiple = False
+
+		for sub in rowobj.col_cell_dict['subcomp']:
+			if "," in rowobj.col_cell_dict['subcomp'][sub]:
+				multiple = True
+				break
+			else:
+				multiple = False
+
+		# 1. If there are multiple comps per part, create ins_templat
+
+		if multiple:
+			temp = sbol3.Component(identity=f'{rowobj.obj.displayId}_ins_template', types=sbol3.SBO_DNA)
+
+			newobj = sbol3.CombinatorialDerivation(identity=f'{rowobj.obj.displayId}_ins', template=temp, name=f'{rowobj.obj.name} insert', \
+				strategy=sbol3.SBOL_ENUMERATE, description=rowobj.obj.description)
+
+			rowobj.obj.description = None
+
+			rowobj.doc.add(temp) # Add the template
+			rowobj.doc.add(newobj) # Add the combdev _ins to the document connected to the template
+
+			rowobj.obj_dict[temp.display_id] = {'uri': temp.type_uri, 'object': temp,
+									'displayId': temp.display_id}
+			backbones = list(rowobj.col_cell_dict['backbone'].values())
+			backbones = backbones[0].split(", ")
+
+			back = True
+			oldobj = rowobj.obj
+			rowobj.obj = newobj
+		else:
+			# 2. Otherwise, create _ins without the template 
+
+			# Create new component _ins without the template
+			newobj = sbol3.Component(identity=f'{rowobj.obj.displayId}_ins', name=f'{rowobj.obj.name} insert', \
+				 description=rowobj.obj.description, types=sbol3.SBO_DNA, roles=sbol3.SO_ENGINEERED_REGION)
+
+			# Set description to None
+			rowobj.obj.description = None
+
+			rowobj.doc.add(newobj)
+
+			backbones = list(rowobj.col_cell_dict['backbone'].values())
+			backbones = backbones[0].split(", ")
+
+
+			back = True
+			oldobj = rowobj.obj
+			rowobj.obj = newobj
 	else:
 		back = False
 
@@ -89,19 +132,40 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 		variant_comps = []
 		comp_ind = 0
 		
+		# Need to update for multiple backbones, as well as remove hardcoding
+		# Check SBOL Utilities for reasoning for multiple backbones
+
 		if back:
+			# Currently this code creates a template for the insertion of the backbone into the main combinatorialderivation
 			tempObj = rowobj.obj_dict[f'{oldobj.display_id}_template']['object']
-			sub = sbol3.LocalSubComponent(types=sbol3.SBO_DNA, name="Inserted construct")
+
+			sub = sbol3.LocalSubComponent(types=sbol3.SBO_DNA, name="Inserted Construct")
 			tempObj.features.append(sub)
 			backbone_sub = sbol3.VariableFeature(cardinality=sbol3.SBOL_ONE, variable=sub, variant_derivations=rowobj.obj)
 			oldobj.variable_features.append(backbone_sub)
 
-			subComp = sbol3.SubComponent(instance_of=rowobj.obj_dict[backbones[0]]['object'])
-			rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].features.append(subComp)
-			constr1 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=subComp, subject=sub)
-			constr2 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=sub, subject=subComp)
-			rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr1)
-			rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr2)
+			if len(backbones) == 1:
+
+				subComp = sbol3.SubComponent(instance_of=rowobj.obj_dict[backbones[0]]['object'])
+				rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].features.append(subComp)
+				constr1 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=subComp, subject=sub)
+				constr2 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=sub, subject=subComp)
+				rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr1)
+				rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr2)
+			else:
+
+				newLocalSub = sbol3.LocalSubComponent(name="Vector", types=sbol3.SBO_DNA)
+				tempObj.features.append(newLocalSub)
+
+				newVarFeature = sbol3.VariableFeature(variable=newLocalSub, variants=(rowobj.obj_dict[i]['object'] for i in backbones), cardinality=sbol3.SBOL_ONE)
+				oldobj.variable_features.append(newVarFeature)
+
+				constr1 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=newLocalSub, subject=sub)
+				constr2 = sbol3.Constraint(restriction=sbol3.SBOL_MEETS, object=sub, subject=newLocalSub)
+
+				rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr1)
+				rowobj.obj_dict[f'{oldobj.display_id}_template']['object'].constraints.append(constr2)
+
 		
 		else:
 			temp = rowobj.obj_dict[f'{rowobj.obj.display_id}_template']['object']
@@ -124,7 +188,7 @@ def subcomponents(rowobj): #UPDATE TO WORK WITH CELL DICT, ALLOW CONSTRAINTS
 				
 				comp_ind += 1
 			else:
-				tempSub = sbol3.SubComponent(name=f'Part {comp_ind}', instance_of=f'{rowobj.obj_dict[comp]["uri"]}', orientation=sbol3.SBOL_INLINE)
+				tempSub = sbol3.SubComponent(name=f'Part {comp_ind + 1}', instance_of=f'{rowobj.obj_dict[comp]["uri"]}', orientation=sbol3.SBOL_INLINE)
 				temp.features.append(tempSub)
 				variant_comps.append(tempSub)
 				if comp_ind != 0:
@@ -223,8 +287,8 @@ def sequence(rowobj):
 				# create sequence object
 				sequence = sbol3.Sequence(f"{rowobj.obj.namespace}/{rowobj.obj.display_id}_sequence",
 										elements=val, encoding=sbol3.IUPAC_DNA_ENCODING, namespace=rowobj.obj.namespace)
-				if rowobj.obj.name is not None:
-					sequence.name = f"{rowobj.obj.name} Sequence"
+				# if rowobj.obj.name is not None:
+				# 	sequence.name = f"{rowobj.obj.name} Sequence"
 
 				rowobj.doc.add(sequence)
 
@@ -239,6 +303,11 @@ def sequence(rowobj):
 
 def circular(rowobj): # NOT IMPLEMENTED
 	# if false add to linear collection if true add to types
+
+	tempObj = rowobj.obj
+	if rowobj.col_cell_dict['Circular'] not in tempObj.types:
+		tempObj.types.append(rowobj.col_cell_dict['Circular'])
+
 	pass
 
 def finalProduct(rowobj):
@@ -253,8 +322,9 @@ def finalProduct(rowobj):
 
 			sbol_objs = doc.objects
 			sbol_objs_names = [x.name for x in sbol_objs]
-			if 'FinalProducts' not in sbol_objs_names:
-				colec = sbol3.Collection('FinalProducts', name='FinalProducts')
+			if 'Final Products' not in sbol_objs_names:
+				colec = sbol3.Collection('FinalProducts', name='Final Products')
+				colec.description = 'Final products desired for actual fabrication'
 
 				sbol_objs = doc.objects
 				sbol_objs_names = [x.name for x in sbol_objs]
@@ -262,11 +332,12 @@ def finalProduct(rowobj):
 				doc.add(colec)
 				colec.members.append(rowobj.obj_uri)
 			else:
-				colec = sbol_objs[sbol_objs_names.index('FinalProducts')]
+				colec = sbol_objs[sbol_objs_names.index('Final Products')]
 				colec.members.append(rowobj.obj_uri)
 
-			if 'LinearDNAProducts' not in sbol_objs_names:
-				colec = sbol3.Collection('LinearDNAProducts', name='LinearDNAProducts')
+			if 'Linear DNA Products' not in sbol_objs_names:
+				colec = sbol3.Collection('LinearDNAProducts', name='Linear DNA Products')
+				colec.description = 'Linear DNA constructs to be fabricated'
 
 				sbol_objs = doc.objects
 				sbol_objs_names = [x.name for x in sbol_objs]
@@ -274,7 +345,7 @@ def finalProduct(rowobj):
 				doc.add(colec)
 				colec.members.append(rowobj.obj)
 			else:
-				colec = sbol_objs[sbol_objs_names.index('LinearDNAProducts')]
+				colec = sbol_objs[sbol_objs_names.index('Linear DNA Products')]
 				colec.members.append(rowobj.obj)
 
 			
