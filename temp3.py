@@ -4,7 +4,7 @@ import sbol3
 import excel_sbol_utils.helpers as h
 
 direct = os.path.split(__file__)[0]
-file_path_in = os.path.join(direct, 'SBOL3_simple_library4.nt')
+file_path_in = os.path.join(direct, 'two_backbones.nt')
 
 # Purpose: After converting the combinatorial derivations, the references to the objects in other parts must be updated
 # Input: SBOL3 Document object, SBOL3 Dictionary of combinatorial derivations after conversion
@@ -21,11 +21,12 @@ def updateVariableFeatures(doc, combdev):
         insert = item + "_ins"
         obj = doc.find(insert)
 
-        if obj == None:
+        if obj == None or type(obj) != sbol3.combderiv.CombinatorialDerivation:
             ins = False
             obj = doc.find(item)
+            obj.strategy = sbol3.SBOL_ENUMERATE
 
-        if ins:
+        if doc.find(f'{insert}_template'):
             template = doc.find(f'{insert}_template')
         else:
             template = doc.find(f'{item}_template')
@@ -34,7 +35,21 @@ def updateVariableFeatures(doc, combdev):
         # 2: Go through every variable feature
         for variable_feature in list(obj.variable_features):
 
-            if len(variable_feature.variants) > 1:
+            # Go through and ensure that variantderivations are correct
+
+            removeList = []
+            addList = []
+            for variant in variable_feature.variants:
+                if str(variant) in combdev:
+                    addList.append(variant)
+                    removeList.append(variant)
+
+            for item in removeList:
+                variable_feature.variants.remove(item)
+            for item in addList:
+                variable_feature.variant_derivations.append(item)
+
+            if len(variable_feature.variants) > 1 or len(variable_feature.variant_derivations) > 0:
                 continue # Leave as a variable feature
             else:
                 variant = variable_feature.variants[0]
@@ -63,6 +78,7 @@ def updateVariableFeatures(doc, combdev):
 
                     template.features.remove(localsub)
                     obj.variable_features.remove(variable_feature)
+            
 
 
         if edited:
@@ -93,7 +109,7 @@ def updateVariableFeatures(doc, combdev):
 
                 # Copy the variable features and add them to copiedVariableFeatures
 
-                copyFeature = sbol3.VariableFeature(variants=variable_feature.variants, name=variable_feature.name, variable=variable_feature.variable, cardinality=variable_feature.cardinality)
+                copyFeature = sbol3.VariableFeature(variants=variable_feature.variants, variant_derivations=variable_feature.variant_derivations, name=variable_feature.name, variable=variable_feature.variable, cardinality=variable_feature.cardinality)
                 copiedVariableFeatures[number] = copyFeature
 
                 # Remove the variable feature from the object
@@ -264,11 +280,14 @@ def updateDescriptions(doc):
         if type(obj) == sbol3.Collection:
             for item in list(obj.members):
                 temp = doc.find(item)
+                if not temp:
+                    continue
 
                 if "_ins" in temp.name:
                     continue
                 if temp.description == None:
-                    temp.description = ""
+                    if doc.find(item + "_ins") == None:
+                        temp.description = ""
         
     return doc
                 
@@ -305,7 +324,8 @@ def convCombDeriv(file_path_in):
         if ins in dictionaryObj:
             combdev[item] = dictionaryObj[item]
             tempcombdev.pop(item)
-            tempcombdev.pop(ins)
+            if ins in tempcombdev:
+                tempcombdev.pop(ins)
 
 
     # 2. Go through the remaining combinatorial derivation objects and check each variable feature to see if it has more than one variant
@@ -404,5 +424,5 @@ doc = updateLinearDNAProducts(doc)
 doc = updateCollectionNames(doc)
 doc = updateDescriptions(doc)
 
-file_path_out = "SampleTemp3Output.nt"
+file_path_out = "two_backbones_ud.nt"
 doc.write(file_path_out, file_format="sorted nt")
