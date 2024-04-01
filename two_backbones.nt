@@ -92,11 +92,13 @@
 <http://sbolstandard.org/testfiles/Backbone_variants> <http://sbols.org/v3#displayId> "Backbone_variants" .
 <http://sbolstandard.org/testfiles/Backbone_variants> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
 <http://sbolstandard.org/testfiles/Backbone_variants> <http://sbols.org/v3#name> "Backbone variants" .
+<http://sbolstandard.org/testfiles/Backbone_variants> <http://sbols.org/v3#strategy> <http://sbols.org/v3#enumerate> .
 <http://sbolstandard.org/testfiles/Backbone_variants> <http://sbols.org/v3#template> <http://sbolstandard.org/testfiles/Backbone_variants_template> .
 <http://sbolstandard.org/testfiles/Backbone_variants> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#CombinatorialDerivation> .
 <http://sbolstandard.org/testfiles/Backbone_variants_ins/SubComponent1> <http://sbols.org/v3#displayId> "SubComponent1" .
 <http://sbolstandard.org/testfiles/Backbone_variants_ins/SubComponent1> <http://sbols.org/v3#instanceOf> <http://parts.igem.org/J23101> .
 <http://sbolstandard.org/testfiles/Backbone_variants_ins/SubComponent1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#SubComponent> .
+<http://sbolstandard.org/testfiles/Backbone_variants_ins> <http://sbols.org/v3#description> "" .
 <http://sbolstandard.org/testfiles/Backbone_variants_ins> <http://sbols.org/v3#displayId> "Backbone_variants_ins" .
 <http://sbolstandard.org/testfiles/Backbone_variants_ins> <http://sbols.org/v3#hasFeature> <http://sbolstandard.org/testfiles/Backbone_variants_ins/SubComponent1> .
 <http://sbolstandard.org/testfiles/Backbone_variants_ins> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
@@ -108,28 +110,28 @@
 <http://sbolstandard.org/testfiles/Backbone_variants_template> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
 <http://sbolstandard.org/testfiles/Backbone_variants_template> <http://sbols.org/v3#type> <https://identifiers.org/SBO:0000251> .
 <http://sbolstandard.org/testfiles/Backbone_variants_template> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#Component> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#description> "Collection from the Basic Parts sheet" .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#displayId> "Basic_Parts" .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://parts.igem.org/I20270> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://parts.igem.org/J23101> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://parts.igem.org/J364001> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://parts.igem.org/J364002> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://parts.igem.org/J364007> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://parts.igem.org/J364009> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://parts.igem.org/R0040> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/pOpen_v4> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/pSB1C3> .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://sbols.org/v3#name> "Basic Parts" .
-<http://sbolstandard.org/testfiles/Basic_Parts> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#Collection> .
-<http://sbolstandard.org/testfiles/Composite_Parts> <http://sbols.org/v3#description> "Collection from the Composite Parts sheet" .
-<http://sbolstandard.org/testfiles/Composite_Parts> <http://sbols.org/v3#displayId> "Composite_Parts" .
-<http://sbolstandard.org/testfiles/Composite_Parts> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
-<http://sbolstandard.org/testfiles/Composite_Parts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Backbone_variants> .
-<http://sbolstandard.org/testfiles/Composite_Parts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Two_by_six> .
-<http://sbolstandard.org/testfiles/Composite_Parts> <http://sbols.org/v3#name> "Composite Parts" .
-<http://sbolstandard.org/testfiles/Composite_Parts> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#Collection> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#description> "Collection from the Basic Parts sheet" .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#displayId> "BasicParts" .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://parts.igem.org/I20270> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://parts.igem.org/J23101> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://parts.igem.org/J364001> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://parts.igem.org/J364002> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://parts.igem.org/J364007> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://parts.igem.org/J364009> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://parts.igem.org/R0040> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/pOpen_v4> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/pSB1C3> .
+<http://sbolstandard.org/testfiles/BasicParts> <http://sbols.org/v3#name> "Basic Parts" .
+<http://sbolstandard.org/testfiles/BasicParts> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#Collection> .
+<http://sbolstandard.org/testfiles/CompositeParts> <http://sbols.org/v3#description> "Collection from the Composite Parts sheet" .
+<http://sbolstandard.org/testfiles/CompositeParts> <http://sbols.org/v3#displayId> "CompositeParts" .
+<http://sbolstandard.org/testfiles/CompositeParts> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
+<http://sbolstandard.org/testfiles/CompositeParts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Backbone_variants_ins> .
+<http://sbolstandard.org/testfiles/CompositeParts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Two_by_six_ins> .
+<http://sbolstandard.org/testfiles/CompositeParts> <http://sbols.org/v3#name> "Composite Parts" .
+<http://sbolstandard.org/testfiles/CompositeParts> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#Collection> .
 <http://sbolstandard.org/testfiles/FinalProducts> <http://sbols.org/v3#description> "Final products desired for actual fabrication" .
 <http://sbolstandard.org/testfiles/FinalProducts> <http://sbols.org/v3#displayId> "FinalProducts" .
 <http://sbolstandard.org/testfiles/FinalProducts> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
@@ -140,8 +142,8 @@
 <http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#description> "Linear DNA constructs to be fabricated" .
 <http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#displayId> "LinearDNAProducts" .
 <http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
-<http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Backbone_variants> .
-<http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Two_by_six> .
+<http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Backbone_variants_ins> .
+<http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#member> <http://sbolstandard.org/testfiles/Two_by_six_ins> .
 <http://sbolstandard.org/testfiles/LinearDNAProducts> <http://sbols.org/v3#name> "Linear DNA Products" .
 <http://sbolstandard.org/testfiles/LinearDNAProducts> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#Collection> .
 <http://sbolstandard.org/testfiles/Two_by_six/VariableFeature1> <http://sbols.org/v3#cardinality> <http://sbols.org/v3#one> .
@@ -172,6 +174,7 @@
 <http://sbolstandard.org/testfiles/Two_by_six_ins/VariableFeature1> <http://sbols.org/v3#variant> <http://parts.igem.org/J364009> .
 <http://sbolstandard.org/testfiles/Two_by_six_ins/VariableFeature1> <http://sbols.org/v3#variant> <http://parts.igem.org/R0040> .
 <http://sbolstandard.org/testfiles/Two_by_six_ins/VariableFeature1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#VariableFeature> .
+<http://sbolstandard.org/testfiles/Two_by_six_ins> <http://sbols.org/v3#description> "" .
 <http://sbolstandard.org/testfiles/Two_by_six_ins> <http://sbols.org/v3#displayId> "Two_by_six_ins" .
 <http://sbolstandard.org/testfiles/Two_by_six_ins> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
 <http://sbolstandard.org/testfiles/Two_by_six_ins> <http://sbols.org/v3#hasVariableFeature> <http://sbolstandard.org/testfiles/Two_by_six_ins/VariableFeature1> .
@@ -215,6 +218,7 @@
 <http://sbolstandard.org/testfiles/Two_by_six_template> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
 <http://sbolstandard.org/testfiles/Two_by_six_template> <http://sbols.org/v3#type> <https://identifiers.org/SBO:0000251> .
 <http://sbolstandard.org/testfiles/Two_by_six_template> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sbols.org/v3#Component> .
+<http://sbolstandard.org/testfiles/pOpen_v4> <http://sbols.org/v3#description> "" .
 <http://sbolstandard.org/testfiles/pOpen_v4> <http://sbols.org/v3#displayId> "pOpen_v4" .
 <http://sbolstandard.org/testfiles/pOpen_v4> <http://sbols.org/v3#hasNamespace> <http://sbolstandard.org/testfiles> .
 <http://sbolstandard.org/testfiles/pOpen_v4> <http://sbols.org/v3#name> "pOpen_v4" .
