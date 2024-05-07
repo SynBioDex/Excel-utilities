@@ -266,6 +266,34 @@ def dataSource(rowobj):
 					rowobj.obj.update_all_dependents(id_map) # this function doesn't yet do everything it should
 					rowobj.data_source_id_to_update[old_id] = new_identity
 
+			if pref == 'URL for GenBank file' or pref == 'URL for FASTA file':	
+				# Namespace is everything except the last part of the url
+				# Loop backward through the value until a '/' is found
+				# Everything before the '/' is the namespace
+				old_val = val
+
+				# Loop through the string backwards
+				for i in range(len(val) - 1, 0, -1):
+					if val[i] == '/':
+						# Everything before the '/' is the namespace
+						ns = val[:i]
+
+						# Everything after the '/' is the display id
+						val = val[i+1:len(val) - 3]
+
+						break
+				old_id = rowobj.obj.identity
+				rowobj.doc.change_object_namespace([rowobj.obj], ns)
+				new_id = rowobj.obj.identity
+				rowobj.data_source_id_to_update[old_id] = new_id
+				rowobj.obj.derived_from = [old_val]
+				if val != rowobj.obj.display_id:
+					new_identity = str(rowobj.obj.identity).replace(rowobj.obj.display_id, helpers.check_name(val))
+					id_map = {rowobj.obj.identity:new_identity}
+					rowobj.obj.set_identity(new_identity)
+					rowobj.obj.update_all_dependents(id_map) # this function doesn't yet do everything it should
+					rowobj.data_source_id_to_update[old_id] = new_identity
+
 def sequence(rowobj):
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
