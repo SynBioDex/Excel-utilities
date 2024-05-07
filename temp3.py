@@ -24,7 +24,7 @@ def updateVariableFeatures(doc, combdev):
         if obj == None or type(obj) != sbol3.combderiv.CombinatorialDerivation:
             ins = False
             obj = doc.find(item)
-            obj.strategy = sbol3.SBOL_ENUMERATE
+            obj.strategy = sbol3.SBOL_ENUMERATE # Check This line
 
         if doc.find(f'{insert}_template'):
             template = doc.find(f'{insert}_template')
@@ -37,13 +37,16 @@ def updateVariableFeatures(doc, combdev):
 
             # Go through and ensure that variantderivations are correct
 
-            removeList = []
-            addList = []
+            removeList = [] # List of variants to remove
+            addList = [] # List of variants to add as a subcomponent
+
+            # combdev list of changed from combinatorial derivations to components
             for variant in variable_feature.variants:
                 if str(variant) in combdev:
                     addList.append(variant)
                     removeList.append(variant)
 
+            # Check to see if correct reasoning but works
             for item in removeList:
                 variable_feature.variants.remove(item)
             for item in addList:
@@ -185,6 +188,7 @@ def updateVariableFeatures(doc, combdev):
                 part += 1
 
             # Clear the part # from the subcomponents
+            # Check this
 
             for feature in list(template.features):
                 if type(feature) == sbol3.SubComponent:
@@ -319,6 +323,7 @@ def convCombDeriv(file_path_in):
             tempcombdev[item] = dictionaryObj[item]
 
     # 1. Check to see if the object has an inserted construct
+    # Go through all combinatorial derivations - if has insert, remove insert from tempcombdev and add top level object to combdev
     for item in dictionaryObj:
         ins = item + "_ins"
         if ins in dictionaryObj:
@@ -349,7 +354,7 @@ def convCombDeriv(file_path_in):
                     combdev[item] = tempcombdev[item]
                     break
 
-
+    # Check if need to remove from tempcombdev after adding to combdev
 
     # 4. For every item in tempcombdev (Not a combinatorial derivation), convert it to a component
 
@@ -404,10 +409,15 @@ def convCombDeriv(file_path_in):
         doc.add(newComponents[item])
 
     # 7. Update the variable features in each of the combinatorial derivation objects if there are conversions
+    # Might have to update to make sure that it's the correct logic (If there are any changes to combinatorial derivations)
     if tempcombdev != combdev:
         updateVariableFeatures(doc, combdev)
 
     # 8. Update the uri references
+    # Not sure if this is necessary - doesn't seem to make a difference
+    # Take a new dictionary mapping the identity of the old objects to the newly created components
+    # Plug it into the helper function to update the uri refs (Not sure if does anything)
+    
     oldToNew = {}
 
     for item in tempcombdev:
