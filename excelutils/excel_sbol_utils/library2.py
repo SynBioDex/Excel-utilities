@@ -68,6 +68,259 @@ def definedFunComponent(rowobj): #NOT IMPLEMENTED
     # self.obj.functionalComponents.add(fcobj.copy())
     pass
 
+def encodesFor(rowobj):
+
+    module_name_pref = rowobj.obj_uri.split("/")[-1]
+
+    for col in rowobj.col_cell_dict.keys():
+        val = rowobj.col_cell_dict[col]
+        if isinstance(val, str):
+            if col == "Encodes for":
+                module_name_suf = val.split("/")[-1]
+                protein_comp_uri = val
+                break
+
+    if not module_name_suf:
+        raise ValueError("No 'Encodes for' value found in rowobj.")
+
+	# create a new module definitions
+    module_name = f"{module_name_pref}_{module_name_suf}"
+   
+    module_def = sbol2.ModuleDefinition(module_name)
+   
+	#create a fc for the protein
+    if module_name_suf not in [fc.displayId for fc in module_def.functionalComponents]:
+        protein_fc = module_def.functionalComponents.create(module_name_suf)
+        protein_fc.definition = protein_comp_uri
+    else:
+        protein_fc = module_def.functionalComponents.get(module_name_suf)
+
+	#create a fc for the dna
+    if module_name_pref not in [fc.displayId for fc in module_def.functionalComponents]:
+        dna_fc = module_def.functionalComponents.create(module_name_pref)
+        dna_fc.definition = rowobj.obj_uri
+    else:
+        dna_fc = module_def.functionalComponents.get(module_name_pref)
+      
+
+    
+    participation = sbol2.Participation(uri = f'{module_name_pref}_template')
+    participation.participant = dna_fc
+    participation.uri = f'{module_name_pref}_template'
+    participation.roles = [sbol2.SBOL_TEMPLATE]
+
+    participation2 = sbol2.Participation(uri= f'{module_name_suf}_product')
+    participation2.participant = protein_fc
+    participation2.uri = f'{module_name_suf}_product'
+    participation2.roles = [sbol2.SBO_PRODUCT]
+
+
+    interaction_name = f'{module_name_suf}_production'
+    interaction_type = sbol2.SBO_GENETIC_PRODUCTION
+    interaction = sbol2.Interaction(interaction_name, interaction_type)
+    interaction.participations.add(participation)
+    interaction.participations.add(participation2)
+
+    module_def.interactions.add(interaction)
+    rowobj.doc.addModuleDefinition(module_def)
+
+
+
+def repressor(rowobj):
+	module_name_pref = rowobj.obj_uri.split("/")[-1]
+	if not any(isinstance(val, (list, str)) and val for val in rowobj.col_cell_dict.values()):
+		raise ValueError("No 'Repressors' value found in rowobj.")
+
+	module_name_suf = None
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+
+		protein_comp_uris = val
+
+		for protein_comp_uri in protein_comp_uris:
+			module_name_suf = protein_comp_uri.split("/")[-1]
+
+			module_name = f"{module_name_pref}_{module_name_suf}"
+			module_def = sbol2.ModuleDefinition(module_name)
+
+			if module_name_suf not in [fc.displayId for fc in module_def.functionalComponents]:
+				protein_fc = module_def.functionalComponents.create(module_name_suf)
+				protein_fc.definition = protein_comp_uri
+			else:
+				protein_fc = module_def.functionalComponents.get(module_name_suf)
+
+			
+			if module_name_pref not in [fc.displayId for fc in module_def.functionalComponents]:
+				dna_fc = module_def.functionalComponents.create(module_name_pref)
+				dna_fc.definition = rowobj.obj_uri
+			else:
+				dna_fc = module_def.functionalComponents.get(module_name_pref)
+
+			
+			participation = sbol2.Participation(uri = f'{module_name_pref}_inhibited')
+			participation.participant = dna_fc
+			participation.uri = f'{module_name_pref}_inhibited'
+			participation.roles = [sbol2.SBO_INHIBITED]
+
+
+			participation2 = sbol2.Participation(uri= f'{module_name_suf}_inhibition')
+			participation2.participant = protein_fc
+			participation2.uri = f'{module_name_suf}_inhibitor'
+			participation2.roles = [sbol2.SBO_INHIBITOR]
+
+			interaction_name = f'{module_name_suf}_repression'
+			interaction_type = sbol2.SBO_INHIBITION
+			interaction = sbol2.Interaction(interaction_name, interaction_type)
+			interaction.participations.add(participation)
+			interaction.participations.add(participation2)
+
+			module_def.interactions.add(interaction)
+			rowobj.doc.addModuleDefinition(module_def)     
+
+def activator(rowobj):
+
+	module_name_pref = rowobj.obj_uri.split("/")[-1]
+	if not any(isinstance(val, (list, str)) and val for val in rowobj.col_cell_dict.values()):
+		raise ValueError("No 'Activators' value found in rowobj.")
+	
+	module_name_suf = None
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+
+		protein_comp_uris = val
+
+		for protein_comp_uri in protein_comp_uris:
+			module_name_suf = protein_comp_uri.split("/")[-1]
+
+			module_name = f"{module_name_pref}_{module_name_suf}"
+			module_def = sbol2.ModuleDefinition(module_name)
+
+			if module_name_suf not in [fc.displayId for fc in module_def.functionalComponents]:
+				protein_fc = module_def.functionalComponents.create(module_name_suf)
+				protein_fc.definition = protein_comp_uri
+			else:
+				protein_fc = module_def.functionalComponents.get(module_name_suf)
+
+			# create a dna functional component
+			if module_name_pref not in [fc.displayId for fc in module_def.functionalComponents]:
+				dna_fc = module_def.functionalComponents.create(module_name_pref)
+				dna_fc.definition = rowobj.obj_uri
+			else:
+				dna_fc = module_def.functionalComponents.get(module_name_pref)
+
+			participation = sbol2.Participation(uri = f'{module_name_pref}_stimulated')
+			participation.participant = dna_fc
+			participation.uri = f'{module_name_pref}_stimulated'
+			participation.roles = [sbol2.SBO_STIMULATED]
+
+
+
+			participation2 = sbol2.Participation(uri= f'{module_name_suf}_stimulation')
+			participation2.participant = protein_fc
+			participation2.uri = f'{module_name_suf}_stimulator'
+			participation2.roles = [sbol2.SBO_STIMULATOR]
+
+			interaction_name = f'{module_name_suf}_activation'
+			interaction_type = sbol2.SBO_STIMULATION
+			interaction = sbol2.Interaction(interaction_name, interaction_type)
+			interaction.participations.add(participation)
+			interaction.participations.add(participation2)
+
+			module_def.interactions.add(interaction)
+			rowobj.doc.addModuleDefinition(module_def)     
+
+
+
+
+
+
+def complexComponent(rowobj):
+
+	module_name_pref = rowobj.obj_uri.split("/")[-1]
+	module_name_suf = None
+	protein_comp_uri = None
+	molecule_name = None
+	molecule_comp_uri = None
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+
+		if isinstance(val, list) and len(val) > 0:
+			module_name_suf = val[0].split("/")[-1]  
+			protein_comp_uri = val[0]  
+			if len(val) > 1:
+				molecule_name = val[1].split("/")[-1]
+				molecule_comp_uri = val[1]
+			break
+		elif isinstance(val, str):
+			module_name_suf = val.split("/")[-1]
+			protein_comp_uri = val
+			break
+	if not module_name_suf:
+		raise ValueError("No 'Components' value found in rowobj.")
+	
+	module_name = f"{module_name_pref}_complex_formation"    
+	# create a new module definition
+	module_def = sbol2.ModuleDefinition(module_name)
+
+	# create a protein functional component
+	if module_name_suf not in [fc.displayId for fc in module_def.functionalComponents]:
+		protein_fc = module_def.functionalComponents.create(module_name_suf)
+		protein_fc.definition = protein_comp_uri
+	else:
+		protein_fc = module_def.functionalComponents.get(module_name_suf)
+
+	# create a product functional component
+	if module_name_pref not in [fc.displayId for fc in module_def.functionalComponents]:
+		prod_fc = module_def.functionalComponents.create(module_name_pref)
+		prod_fc.definition = rowobj.obj_uri
+	else:
+		prod_fc = module_def.functionalComponents.get(module_name_pref)
+	
+	# if exists, create molecule functional component
+	if molecule_name:
+		if molecule_name not in [fc.displayId for fc in module_def.functionalComponents]:
+			molecule_fc = module_def.functionalComponents.create(molecule_name)
+			molecule_fc.definition = molecule_comp_uri
+		else:
+			molecule_fc = module_def.functionalComponents.get(molecule_name)
+	
+
+
+	# participation for product
+	participation = sbol2.Participation(uri = f'{module_name_pref}_product')
+	participation.participant = prod_fc
+	participation.uri = f'{module_name_pref}_product'
+	participation.roles = [sbol2.SBO_PRODUCT]
+
+	# participation for protein
+	participation2 = sbol2.Participation(uri= f'{module_name_suf}_reactor')
+	participation2.participant = protein_fc
+	participation2.uri = f'{module_name_suf}_reactant'
+	participation2.roles = [sbol2.SBO_REACTANT]
+
+	#if molecule exists, create participation for molecule
+	if molecule_name:
+		participation3 = sbol2.Participation(uri= f'{molecule_name}_reactor')
+		participation3.participant = molecule_fc
+		participation3.uri = f'{molecule_name}_reactant'
+		participation3.roles = [sbol2.SBO_REACTANT]
+
+
+	interaction_name = f'{module_name_pref}_complex_formation'
+
+	interaction_type = sbol2.SBO_NONCOVALENT_BINDING
+	interaction = sbol2.Interaction(interaction_name, interaction_type)
+	interaction.participations.add(participation)
+	interaction.participations.add(participation2)
+
+	if molecule_name:
+		interaction.participations.add(participation3)
+
+	module_def.interactions.add(interaction)
+	rowobj.doc.addModuleDefinition(module_def)
+
+
+
 def subcomponents(rowobj):
 	sbol2.Config.setOption(sbol2.ConfigOptions.SBOL_TYPED_URIS, True)
 	if 'subcomp' in rowobj.col_cell_dict:
@@ -201,7 +454,12 @@ def sequence(rowobj):
 				if rowobj.obj.name is not None:
 					sequence.name = f"{rowobj.obj.name} Sequence"
 
-				rowobj.doc.add(sequence)
+				# rowobj.doc.add(sequence)
+				# MODIFIED THIS BC WAS GIVING A DUPLICATE ERROR
+				if rowobj.doc.find(sequence.identity) is None:
+					rowobj.doc.add(sequence)
+				else:
+					print(f"Object with URI {sequence.identity} already exists. Skipping addition.")
 
 				# link sequence object to component definition
 				rowobj.obj.sequences = [sequence]
@@ -209,6 +467,47 @@ def sequence(rowobj):
 			else:
 				logging.warning(f'The cell value for {rowobj.obj.identity} is not an accepted sequence type, it has been added as a uri and left for post processing. Sequence value provided: {val} (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, col:{col})')
 				rowobj.obj.sequences = [val]
+		else:
+			raise TypeError(f"A multicolumn value was unexpectedly given in sequence, {rowobj.col_cell_dict}")
+		
+def proteinSequence(rowobj):
+
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+		if isinstance(val, str):
+			# might need to be careful if the object type is sequence!
+			# THIS MIGHT HAVE BUGS IF MULTIPLE SEQUENCES ARE PROVIDED FOR
+			# ONE OBJECT. E.g overwrite in self.obj.sequences = [val] ?
+			if re.fullmatch(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', val):
+				# if a url
+				rowobj.obj.sequences.append(val)
+
+			elif re.match(r'^[ACDEFGHIKLMNPQRSTVWY\s*]+$', val):
+				# if a sequence string
+
+				# removes spaces, enters, and makes all lower case
+				val = "".join(val.split())
+				# removes *
+				val = val.replace('*', '')
+				val = val.replace(u"\ufeff", "").upper()
+
+				
+
+
+				# create sequence object
+				protein_sequence = sbol2.Sequence(f"{rowobj.obj.displayId}_proteinSequence",
+										elements=val, encoding='http://www.chem.qmul.ac.uk/iupac/AminoAcid/')
+				if rowobj.obj.name is not None:
+					protein_sequence.name = f"{rowobj.obj.name} Protein Sequence"
+
+				rowobj.doc.add(protein_sequence)
+
+				# link sequence object to component definition
+				rowobj.obj.sequences.append(protein_sequence.identity)
+
+			else:
+				logging.warning(f'The cell value for {rowobj.obj.identity} is not an accepted sequence type, it has been added as a uri and left for post processing. Sequence value provided: {val} (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, col:{col})')
+				rowobj.obj.sequences.append(val)
 		else:
 			raise TypeError(f"A multicolumn value was unexpectedly given in sequence, {rowobj.col_cell_dict}")
 
