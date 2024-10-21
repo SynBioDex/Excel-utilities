@@ -480,7 +480,7 @@ def proteinSequence(rowobj):
 			# ONE OBJECT. E.g overwrite in self.obj.sequences = [val] ?
 			if re.fullmatch(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', val):
 				# if a url
-				rowobj.obj.sequences.append(val)
+				rowobj.obj.sequences = [val]
 
 			elif re.match(r'^[ACDEFGHIKLMNPQRSTVWY\s*]+$', val):
 				# if a sequence string
@@ -490,8 +490,6 @@ def proteinSequence(rowobj):
 				# removes *
 				val = val.replace('*', '')
 				val = val.replace(u"\ufeff", "").upper()
-
-				
 
 
 				# create sequence object
@@ -503,11 +501,11 @@ def proteinSequence(rowobj):
 				rowobj.doc.add(protein_sequence)
 
 				# link sequence object to component definition
-				rowobj.obj.sequences.append(protein_sequence.identity)
+				rowobj.obj.sequences = [protein_sequence.identity]
 
 			else:
 				logging.warning(f'The cell value for {rowobj.obj.identity} is not an accepted sequence type, it has been added as a uri and left for post processing. Sequence value provided: {val} (sheet:{rowobj.sheet}, row:{rowobj.sht_row}, col:{col})')
-				rowobj.obj.sequences.append(val)
+				rowobj.obj.sequences = [val]
 		else:
 			raise TypeError(f"A multicolumn value was unexpectedly given in sequence, {rowobj.col_cell_dict}")
 
