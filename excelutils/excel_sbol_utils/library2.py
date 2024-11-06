@@ -370,8 +370,7 @@ def subcomponents(rowobj):
 		template.assemblePrimaryStructure(comp_list)
 		#template.compile(assembly_method=None)
 		
-		f#or comp in non_var_comps:
-			
+		#or comp in non_var_comps:			
 
 		rowobj.obj.masterTemplate = template
 		for var in variant_comps:
