@@ -3,7 +3,7 @@ import re
 import logging
 import sbol3
 import warnings
-import excel_sbol_utils.helpers as helpers
+import helpers as helpers
 
 
 def objectType(rowobj):
