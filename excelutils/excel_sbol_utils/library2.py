@@ -3,8 +3,12 @@ import excel_sbol_utils.helpers as hf
 import re
 import logging
 import requests
+import urllib.parse
+import webbrowser
+import excel2sbol.converter as conv
+import os 
 import sys
-import os
+import json
 # might be better if some of the ones like data sources were put in a library
 # which contained both sbol2 and sbol3. Then excel converter could check
 # if in lib2 or lib_both for version 2 and lib3 or lib_both for version 3
@@ -18,7 +22,60 @@ def objectType(rowobj):
 
 def displayId(rowobj):
     # used to set the object display id in converter function
-    pass
+	username = os.getenv("SBOL_USERNAME")
+	password = os.getenv("SBOL_PASSWORD")
+	
+	dict = os.getenv("SBOL_DICTIONARY")
+	data = json.loads(dict)
+	url = data["Domain"]
+	if url.endswith('/'):
+		url = url[:-1]
+	collection = data["Library Name"]
+	# print(url)
+	# print(collection)
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+
+		if col == "Previous Version (URI)":
+			# print(rowobj.obj)
+			print(rowobj.col_cell_dict)
+			display_id = rowobj.col_cell_dict['Part Id']
+			previous_id = rowobj.col_cell_dict['Previous Version (URI)']
+			rowobj.obj.wasDerivedFrom = previous_id
+			# print(rowobj.obj.properties)
+			return
+		
+		sbol2.Config.setOption('sbol_typed_uris', True)
+		doc = sbol2.Document()
+
+		sbol2.setHomespace(url)
+		
+		part_shop = sbol2.PartShop(url)
+
+		if username is None or password is None or url is None:
+			# do not login
+			print("No login credentials provided. Proceeding without login.")
+		else:
+			try:
+				part_shop.login(username, password)
+				print("Successfully logged in.")
+			except Exception as e:
+				print(f"Login failed: {e}")
+				exit(1)
+		collection_parts = collection.split('/')[:-2]
+		link = '/'.join(collection_parts)
+		link2 = f"{link}/{val}/1"
+		print(link2)
+		part_shop.pull(link2, doc)
+		
+		component = doc.get(link2)
+		if component:
+			print(f"Component with displayId {component.displayId} already exists at URL {component.identity}")
+			print("Terminating")
+			sys.exit(1)
+
+
+    
 
 def types(rowobj):
     for col in rowobj.col_cell_dict.keys():
@@ -39,6 +96,7 @@ def addToDescription(rowobj):
 			raise TypeError(f"A multicolumn value was unexpectedly given in addToDescription, {rowobj.col_cell_dict}")
 	setattr(rowobj.obj, 'description', current)
 
+
 def moduleModuleDefiniton(rowobj): #NOT IMPLEMENTED
     # module_name_pref = self.obj_uri.split("/")[-1]
     # module_name_suf = self.cell_val.split("/")[-1]
@@ -57,7 +115,7 @@ def additionalFuncComponent(rowobj): #NOT IMPLEMENTED
     # self.obj.functionalComponents.add(fc1)
     pass
 
-def definedFunComponent(rowobj): #NOT IMPLEMENTED
+def definedFuncComponent(rowobj): #NOT IMPLEMENTED
     # if isinstance(self.cell_val, list):
     #     # pulling the functional component object
     #     # by the name (hence the split) from the obj_cit
@@ -70,6 +128,7 @@ def definedFunComponent(rowobj): #NOT IMPLEMENTED
     # # print(self.obj, fcobj)
     # self.obj.functionalComponents.add(fcobj.copy())
     pass
+
 def sequence_authentication(email, password, base_url,uri):
 	login_data = {
 		'email': email, 
@@ -91,7 +150,7 @@ def sequence_authentication(email, password, base_url,uri):
 					print("The sequence already exists in the public repository. The URI is: ", result['uri'])
 					return False
 		else:
-			print("Sequence not found in public repository.")
+			# print("Sequence not found in public repository.")
 			# double check the logic fo public repos and sequence search
 			return True
 	else:
@@ -130,6 +189,7 @@ def sequence_authentication(email, password, base_url,uri):
 		print("Login failed.")
 		return False
 	
+
 def link_validation(email, password, base_url, target_url):
 	# initial check w/out auth
 	# print("Checking link: ", target_url)
@@ -140,13 +200,13 @@ def link_validation(email, password, base_url, target_url):
 	initial_response = requests.get(target_url, headers={'Accept': 'application/json'})
 	# print("Initital response status code: ", initial_response.status_code)
 	if initial_response.status_code == 200:
-		print("Link is accessible without authentication.")
+		# print("Link is accessible without authentication.")
 		return True  
     
 	# the link is not accessible without authentication, try logging in
 	elif initial_response.status_code in {401, 403, 404}:
 		if email is None or password is None or base_url is None:
-			print("Need login credentials to access the link.")
+			# print("Need login credentials to access the link.")
 			return False
 		else:
 			login_response = requests.post(
@@ -164,16 +224,14 @@ def link_validation(email, password, base_url, target_url):
 			# retry accessing the link after logging in
 			final_response = requests.get(target_url,headers = {'Accept': 'application/json', 'X-authorization': login_response.content})
 			if final_response.status_code == 200:
-				print("Link is accessible after authentication.")
+				# print("Link is accessible after authentication.")
 				return True
 			else:
-				print("Link is not accessible after authentication.")
+				# print("Link is not accessible after authentication.")
 				return False
 		
 	print("Link is not accessible.")
 	return False
-
-
 
 def encodesFor(rowobj):
 
@@ -183,6 +241,10 @@ def encodesFor(rowobj):
     password = os.getenv("SBOL_PASSWORD")
     url = os.getenv("SBOL_URL")
     # print(rowobj.col_cell_dict)
+    dict = os.getenv("SBOL_DICTIONARY")
+    data = json.loads(dict)
+	
+    print(data["Library Name"])
     for col in rowobj.col_cell_dict.keys():
         val = rowobj.col_cell_dict[col]
         # print("Val: ", val)
@@ -518,6 +580,7 @@ def complexComponent(rowobj):
 	rowobj.doc.addModuleDefinition(module_def)
 
 
+    
 
 
 def subcomponents(rowobj):
@@ -569,7 +632,7 @@ def subcomponents(rowobj):
 		template.assemblePrimaryStructure(comp_list)
 		#template.compile(assembly_method=None)
 		
-		f#or comp in non_var_comps:
+		#or comp in non_var_comps:
 			
 
 		rowobj.obj.masterTemplate = template
@@ -772,3 +835,9 @@ def finalProduct(rowobj):
 
 def circular(rowobj): # NOT IMPLEMENTED
     pass
+
+		
+
+
+
+
