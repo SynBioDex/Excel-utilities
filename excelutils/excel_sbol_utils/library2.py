@@ -20,6 +20,13 @@ def objectType(rowobj):
     # used to decide the object type in the converter function
     pass
 
+def is_url(str):
+	try:
+		res = urllib.parse.urlparse(str)
+		return all([res.scheme, res.netloc])
+	except ValueError:
+		return False
+
 def displayId(rowobj):
     # used to set the object display id in converter function
 	username = os.getenv("SBOL_USERNAME")
@@ -31,18 +38,22 @@ def displayId(rowobj):
 	if url.endswith('/'):
 		url = url[:-1]
 	collection = data["Library Name"]
-	# print(url)
-	# print(collection)
+	if is_url(collection) == False:
+		if data["Master Collection"] is not None:
+			collection = data["Master Collection"]
+		else:
+			return
+	
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
 
 		if col == "Previous Version (URI)":
 			# print(rowobj.obj)
-			print(rowobj.col_cell_dict)
+			# print(rowobj.col_cell_dict)
 			display_id = rowobj.col_cell_dict['Part Id']
 			previous_id = rowobj.col_cell_dict['Previous Version (URI)']
 			rowobj.obj.wasDerivedFrom = previous_id
-			# print(rowobj.obj.properties)
+			
 			return
 		
 		sbol2.Config.setOption('sbol_typed_uris', True)
@@ -58,21 +69,24 @@ def displayId(rowobj):
 		else:
 			try:
 				part_shop.login(username, password)
-				print("Successfully logged in.")
+				# print("Successfully logged in.")
 			except Exception as e:
 				print(f"Login failed: {e}")
 				exit(1)
 		collection_parts = collection.split('/')[:-2]
 		link = '/'.join(collection_parts)
+		val = hf.check_name(val)
 		link2 = f"{link}/{val}/1"
-		print(link2)
+		# print(link2)
 		part_shop.pull(link2, doc)
 		
 		component = doc.get(link2)
 		if component:
 			print(f"Component with displayId {component.displayId} already exists at URL {component.identity}")
-			print("Terminating")
-			sys.exit(1)
+			# print("Terminating")
+			os.environ["COUNTER"] = "Error found"
+			# sys.exit(1)
+	pass
 
 
     
@@ -177,6 +191,7 @@ def sequence_authentication(email, password, base_url,uri):
 					print("Number of duplicate sequences found: ", len(search_results))
 				for result in search_results:
 					print("The sequence already exists in the database. The URI is: ", result['uri'])
+					os.environ["COUNTER"] = "Error found"
 				
 				return False
 		else:
@@ -244,7 +259,7 @@ def encodesFor(rowobj):
     dict = os.getenv("SBOL_DICTIONARY")
     data = json.loads(dict)
 	
-    print(data["Library Name"])
+    
     for col in rowobj.col_cell_dict.keys():
         val = rowobj.col_cell_dict[col]
         # print("Val: ", val)
