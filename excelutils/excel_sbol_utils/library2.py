@@ -28,7 +28,7 @@ def is_url(str):
 		return False
 
 def displayId(rowobj):
-    # used to set the object display id in converter function
+    # used to check the object display id in the converter function
 	username = os.getenv("SBOL_USERNAME")
 	password = os.getenv("SBOL_PASSWORD")
 	
@@ -38,11 +38,21 @@ def displayId(rowobj):
 	if url.endswith('/'):
 		url = url[:-1]
 	collection = data["Library Name"]
+	master_collection = False
+	private_collection = False
 	if is_url(collection) == False:
-		if data["Master Collection"] is not None:
-			collection = data["Master Collection"]
+		private_collection = False
+		
+		if data["Master Collection"].strip() == "":
+			
+			master_collection = False
 		else:
-			return
+			collection = data["Master Collection"]
+			master_collection = True
+	else:
+		private_collection = True
+
+		
 	
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
@@ -53,40 +63,78 @@ def displayId(rowobj):
 			display_id = rowobj.col_cell_dict['Part Id']
 			previous_id = rowobj.col_cell_dict['Previous Version (URI)']
 			rowobj.obj.wasDerivedFrom = previous_id
-			
 			return
 		
-		sbol2.Config.setOption('sbol_typed_uris', True)
-		doc = sbol2.Document()
-
-		sbol2.setHomespace(url)
-		
-		part_shop = sbol2.PartShop(url)
-
-		if username is None or password is None or url is None:
-			# do not login
-			print("No login credentials provided. Proceeding without login.")
-		else:
-			try:
-				part_shop.login(username, password)
-				# print("Successfully logged in.")
-			except Exception as e:
-				print(f"Login failed: {e}")
-				exit(1)
-		collection_parts = collection.split('/')[:-2]
-		link = '/'.join(collection_parts)
 		val = hf.check_name(val)
-		link2 = f"{link}/{val}/1"
-		# print(link2)
-		part_shop.pull(link2, doc)
+		# print("Display ID: ", val)
+
+		if private_collection == True:
+			
+			if username is None or password is None or url is None:
+				print("No login credentials provided. Proceeding without login.")
+				print("Unable to search in a private collection without login credentials.")
+				print("Terminating")
+				sys.exit(1)
+			else:
+				part_shop = sbol2.PartShop(collection)
+				try:
+					part_shop.login(username, password)
+				except Exception as e:
+					print(f"Login failed: {e}")
+					exit(1)
+
+				search_results = part_shop.search_exact(val, property_uri='http://sbols.org/v2#displayId')
+				if len(search_results) > 0 :
+					for part in search_results:
+						print(f"Part with display ID:  {part.displayId}  already exists in the collection at URL {part.identity}.")
+						print("XML file will NOT be generated.")
+						os.environ["COUNTER"] = "Error found"
+
+		else:
+			
+			if master_collection == True:
+				
+				# part_shop = sbol2.PartShop(collection)
+				if username is None or password is None or url is None:
+					
+					part_shop = sbol2.PartShop(collection)
+				else:
+					part_shop = sbol2.PartShop(collection)
+					try:
+						part_shop.login(username, password)
+					except Exception as e:
+						print(f"Login failed: {e}")
+						exit(1)
+
+				search_results = part_shop.search_exact(val, property_uri='http://sbols.org/v2#displayId')
+				if len(search_results) > 0 :
+					for part in search_results:
+						print(f"Part with display ID:  {part.displayId}  already exists in the collection at URL {part.identity}.")
+						print("XML file will NOT be generated.")
+						os.environ["COUNTER"] = "Error found"
+			elif master_collection == False:
+				
+				# part_shop = sbol2.PartShop(url)
+				if username is None or password is None or url is None:
+					
+					part_shop = sbol2.PartShop(url)
+				else:
+					part_shop = sbol2.PartShop(collection)
+					try:
+						part_shop.login(username, password)
+					except Exception as e:
+						print(f"Login failed: {e}")
+						exit(1)
+				search_results = part_shop.search_exact(val, property_uri='http://sbols.org/v2#displayId')
+				if len(search_results) > 0 :
+					for part in search_results:
+						print(f"Part with display ID:  {part.displayId}  already exists in the collection at URL {part.identity}.")
+						print("Just a warning. XML file will be generated.")
+				
 		
-		component = doc.get(link2)
-		if component:
-			print(f"Component with displayId {component.displayId} already exists at URL {component.identity}")
-			# print("Terminating")
-			os.environ["COUNTER"] = "Error found"
-			# sys.exit(1)
-	pass
+		
+
+	
 
 
     
