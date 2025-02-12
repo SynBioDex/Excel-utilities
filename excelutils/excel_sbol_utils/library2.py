@@ -38,8 +38,13 @@ def displayId(rowobj):
 	if url.endswith('/'):
 		url = url[:-1]
 	collection = data["Library Name"]
+	
 	master_collection = False
 	private_collection = False
+	if data["Domain"].strip() == "":
+		# print("No domain name provided. Proceeding without checking displayId.")
+		return
+	
 	if is_url(collection) == False:
 		private_collection = False
 		
@@ -67,7 +72,7 @@ def displayId(rowobj):
 		
 		val = hf.check_name(val)
 		# print("Display ID: ", val)
-
+		
 		if private_collection == True:
 			
 			if username is None or password is None or url is None:
@@ -192,6 +197,7 @@ def definedFuncComponent(rowobj): #NOT IMPLEMENTED
     pass
 
 def sequence_authentication(email, password, base_url,uri):
+	
 	login_data = {
 		'email': email, 
 		'password': password
@@ -260,6 +266,7 @@ def link_validation(email, password, base_url, target_url):
 					'email': email, 
 					'password': password
 				}
+
 	initial_response = requests.get(target_url, headers={'Accept': 'application/json'})
 	# print("Initital response status code: ", initial_response.status_code)
 	if initial_response.status_code == 200:
@@ -269,8 +276,11 @@ def link_validation(email, password, base_url, target_url):
 	# the link is not accessible without authentication, try logging in
 	elif initial_response.status_code in {401, 403, 404}:
 		if email is None or password is None or base_url is None:
-			# print("Need login credentials to access the link.")
-			return False
+			print(f"Need login credentials to access the link {target_url}.")
+			print("This is a warning. XML file will NOT be generated.")
+			os.environ["COUNTER"] = "Error found"
+			# i just changed this to return True, but it was False
+			return True
 		else:
 			login_response = requests.post(
 				f"{base_url}/login",
@@ -764,7 +774,9 @@ def sequence(rowobj):
 		username = os.getenv("SBOL_USERNAME")
 		password = os.getenv("SBOL_PASSWORD")
 		url = os.getenv("SBOL_URL")
-		
+		dict = os.getenv("SBOL_DICTIONARY")
+		data = json.loads(dict)
+	
 		if isinstance(val, str):
 			# might need to be careful if the object type is sequence!
 			# THIS MIGHT HAVE BUGS IF MULTIPLE SEQUENCES ARE PROVIDED FOR
@@ -772,7 +784,7 @@ def sequence(rowobj):
 			if re.fullmatch(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', val):
 				# if a url
 				# rowobj.obj.sequences = [val]
-				
+
 				valid_uri = link_validation(username, password, url, val)
 				if not valid_uri:
 					print("Terminating")
@@ -788,6 +800,9 @@ def sequence(rowobj):
 				val = val.replace(u"\ufeff", "").lower()
 
 				uri = f'{url}/search/sequence={val}&'
+				if data["Domain"].strip() == "":
+					# print("Domain not provided. Proceding without checking the domain for duplicate sequences.")
+					return
 				valid_uri = sequence_authentication(username, password, url,uri)
 				if not valid_uri:
 					print("Part name: ", rowobj.obj.identity.split('/')[-2])
@@ -823,6 +838,8 @@ def proteinSequence(rowobj):
 		username = os.getenv("SBOL_USERNAME")
 		password = os.getenv("SBOL_PASSWORD")
 		url = os.getenv("SBOL_URL")
+		dict = os.getenv("SBOL_DICTIONARY")
+		data = json.loads(dict)
 		if isinstance(val, str):
 			# might need to be careful if the object type is sequence!
 			# THIS MIGHT HAVE BUGS IF MULTIPLE SEQUENCES ARE PROVIDED FOR
@@ -847,6 +864,9 @@ def proteinSequence(rowobj):
 				val = val.replace('*', '')
 				val = val.replace(u"\ufeff", "").upper()
 				uri = f'{url}/search/sequence={val}&'
+				if data["Domain"].strip() == "":
+					# print("Domain not provided. Proceding without checking the domain for duplicate sequences.")
+					return
 				valid_uri = sequence_authentication(username, password, url,uri)
 				if not valid_uri:
 					print("Part name: ", rowobj.obj.identity.split('/')[-2])
