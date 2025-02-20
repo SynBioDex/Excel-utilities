@@ -14,7 +14,8 @@ import json
 # if in lib2 or lib_both for version 2 and lib3 or lib_both for version 3
 # would reduce code duplication?
 
-
+def module(roqobj):
+	pass
 
 def objectType(rowobj):
     # used to decide the object type in the converter function
@@ -29,11 +30,12 @@ def is_url(str):
 
 def displayId(rowobj):
     # used to check the object display id in the converter function
-	username = os.getenv("SBOL_USERNAME")
+	# username = os.getenv("SBOL_USERNAME")
 	password = os.getenv("SBOL_PASSWORD")
 	
 	dict = os.getenv("SBOL_DICTIONARY")
 	data = json.loads(dict)
+	username = data["Email"]
 	url = data["Domain"]
 	if url.endswith('/'):
 		url = url[:-1]
@@ -41,6 +43,11 @@ def displayId(rowobj):
 	
 	master_collection = False
 	private_collection = False
+
+	# print("username: ", username)
+	# print("password: ", password)
+	# print("url: ", url)
+
 	if data["Domain"].strip() == "":
 		# print("No domain name provided. Proceeding without checking displayId.")
 		return
@@ -61,6 +68,8 @@ def displayId(rowobj):
 	
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
+		# val = val.lower()
+		# print("DisplayId Val: ", val)
 
 		if col == "Previous Version (URI)":
 			# print(rowobj.obj)
@@ -85,7 +94,7 @@ def displayId(rowobj):
 				try:
 					part_shop.login(username, password)
 				except Exception as e:
-					print(f"Login failed: {e}")
+					print(f"Login failed for private collection: {e}")
 					exit(1)
 
 				search_results = part_shop.search_exact(val, property_uri='http://sbols.org/v2#displayId')
@@ -104,11 +113,14 @@ def displayId(rowobj):
 					
 					part_shop = sbol2.PartShop(collection)
 				else:
+					# print("Checking master collection: ", collection)
 					part_shop = sbol2.PartShop(collection)
+					# print(part_shop)
+					
 					try:
 						part_shop.login(username, password)
 					except Exception as e:
-						print(f"Login failed: {e}")
+						print(f"Login failed for master collection: {e}")
 						exit(1)
 
 				search_results = part_shop.search_exact(val, property_uri='http://sbols.org/v2#displayId')
@@ -120,15 +132,17 @@ def displayId(rowobj):
 			elif master_collection == False:
 				
 				# part_shop = sbol2.PartShop(url)
-				if username is None or password is None or url is None:
-					
+				
+				if username.strip() == "" or password is None or url.strip() == "":
+					print("No login credentials provided. Proceeding without login.")
 					part_shop = sbol2.PartShop(url)
 				else:
-					part_shop = sbol2.PartShop(collection)
+					print("Checking url: ", url)
+					part_shop = sbol2.PartShop(url)
 					try:
 						part_shop.login(username, password)
 					except Exception as e:
-						print(f"Login failed: {e}")
+						print(f"Login failed for the general domain: {e}")
 						exit(1)
 				search_results = part_shop.search_exact(val, property_uri='http://sbols.org/v2#displayId')
 				if len(search_results) > 0 :
@@ -202,6 +216,9 @@ def sequence_authentication(email, password, base_url,uri):
 		'email': email, 
 		'password': password
 	}
+	if base_url.endswith('/'):
+		base_url = base_url[:-1]
+	
 	if email is None or password is None or base_url is None:
 		seq_search = requests.get(
 					f'https://synbiohub.org/{uri}',
@@ -229,6 +246,7 @@ def sequence_authentication(email, password, base_url,uri):
 			},
 			data= login_data
 		)
+		# print("Login response status code: ", login_response.status_code)
 	if login_response.status_code == 200:
 		sequence_search_response = requests.get(
 					uri,
@@ -255,7 +273,7 @@ def sequence_authentication(email, password, base_url,uri):
 		
 		return True
 	else:
-		print("Login failed.")
+		print("Login failed for sequence auth.")
 		return False
 	
 
@@ -310,12 +328,16 @@ def encodesFor(rowobj):
 
     module_name_pref = rowobj.obj_uri.split("/")[-1]
     module_name_suf = None
-    username = os.getenv("SBOL_USERNAME")
+    # username = os.getenv("SBOL_USERNAME")
     password = os.getenv("SBOL_PASSWORD")
-    url = os.getenv("SBOL_URL")
+    # url = os.getenv("SBOL_URL")
     # print(rowobj.col_cell_dict)
     dict = os.getenv("SBOL_DICTIONARY")
     data = json.loads(dict)
+    username = data["Email"]
+    url = data["Domain"]
+    if url.endswith('/'):
+        url = url[:-1]
 	
     
     for col in rowobj.col_cell_dict.keys():
@@ -389,9 +411,15 @@ def repressor(rowobj):
     module_name_suf = None
     for col in rowobj.col_cell_dict.keys():
         val = rowobj.col_cell_dict[col]
-        username = os.getenv("SBOL_USERNAME")
+        # username = os.getenv("SBOL_USERNAME")
         password = os.getenv("SBOL_PASSWORD")
-        url = os.getenv("SBOL_URL")
+        # url = os.getenv("SBOL_URL")
+        dict = os.getenv("SBOL_DICTIONARY")
+        data = json.loads(dict)
+        username = data["Email"]
+        url = data["Domain"]
+        if url.endswith('/'):
+            url = url[:-1]
         # print(username, password, url)
         if col == "Repressors (URI)" and isinstance(val, str):
             protein_comp_uris = val.split(",")
@@ -460,9 +488,15 @@ def activator(rowobj):
 	# print(rowobj.col_cell_dict)
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
-		username = os.getenv("SBOL_USERNAME")
+		# username = os.getenv("SBOL_USERNAME")
 		password = os.getenv("SBOL_PASSWORD")
-		url = os.getenv("SBOL_URL")
+		# url = os.getenv("SBOL_URL")
+		dict = os.getenv("SBOL_DICTIONARY")
+		data = json.loads(dict)
+		username = data["Email"]
+		url = data["Domain"]
+		if url.endswith('/'):
+			url = url[:-1]
 
 		if col == "Activators (URI)" and isinstance(val, str):
 			# print("Protein comp uris: ", val)
@@ -536,9 +570,15 @@ def complexComponent(rowobj):
 	molecule_comp_uri = None
 	components = []
 	# print(rowobj.col_cell_dict)
-	username = os.getenv("SBOL_USERNAME")
+	# username = os.getenv("SBOL_USERNAME")
 	password = os.getenv("SBOL_PASSWORD")
-	url = os.getenv("SBOL_URL")
+	# url = os.getenv("SBOL_URL")
+	dict = os.getenv("SBOL_DICTIONARY")
+	data = json.loads(dict)
+	username = data["Email"]
+	url = data["Domain"]
+	if url.endswith('/'):
+		url = url[:-1]
 	# print(rowobj.col_cell_dict)
 	# if Components column present
 	
@@ -771,12 +811,13 @@ def sequence(rowobj):
 		
 		val = rowobj.col_cell_dict[col]
 		# print(val)
-		username = os.getenv("SBOL_USERNAME")
+		# username = os.getenv("SBOL_USERNAME")
 		password = os.getenv("SBOL_PASSWORD")
-		url = os.getenv("SBOL_URL")
+		# url = os.getenv("SBOL_URL")
 		dict = os.getenv("SBOL_DICTIONARY")
 		data = json.loads(dict)
-	
+		username = data["Email"]
+		url = data["Domain"]
 		if isinstance(val, str):
 			# might need to be careful if the object type is sequence!
 			# THIS MIGHT HAVE BUGS IF MULTIPLE SEQUENCES ARE PROVIDED FOR
@@ -803,6 +844,7 @@ def sequence(rowobj):
 				if data["Domain"].strip() == "":
 					# print("Domain not provided. Proceding without checking the domain for duplicate sequences.")
 					return
+				
 				valid_uri = sequence_authentication(username, password, url,uri)
 				if not valid_uri:
 					print("Part name: ", rowobj.obj.identity.split('/')[-2])
@@ -835,11 +877,13 @@ def proteinSequence(rowobj):
 
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
-		username = os.getenv("SBOL_USERNAME")
+		# username = os.getenv("SBOL_USERNAME")
 		password = os.getenv("SBOL_PASSWORD")
-		url = os.getenv("SBOL_URL")
+		# url = os.getenv("SBOL_URL")
 		dict = os.getenv("SBOL_DICTIONARY")
 		data = json.loads(dict)
+		username = data["Email"]
+		url = data["Domain"]
 		if isinstance(val, str):
 			# might need to be careful if the object type is sequence!
 			# THIS MIGHT HAVE BUGS IF MULTIPLE SEQUENCES ARE PROVIDED FOR
