@@ -14,7 +14,35 @@ import json
 # if in lib2 or lib_both for version 2 and lib3 or lib_both for version 3
 # would reduce code duplication?
 
+def module(rowobj):
+	module_name_pref = rowobj.obj_uri.split("/")[-1]
+	module_name_suf = None
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
 
+		module_name = f"{module_name_pref}_sample_design_module"
+
+		module_def = sbol2.ModuleDefinition(module_name)
+
+	pass
+
+def funcComp(rowobj):
+	module_def_name = rowobj.obj_uri.split("/")[-1]
+	fc_name = None
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+		module_name = f"{module_def_name}_module_definition"
+		module_def = sbol2.ModuleDefinition(module_name)
+		fc_name = val
+		if fc_name not in [fc.displayId for fc in module_def.functionalComponents]:
+			fc = module_def.functionalComponents.create(fc_name)
+			fc.definition = val
+		else:
+			fc = module_def.functionalComponents.get(fc_name)
+
+		rowobj.doc.addModuleDefinition(module_def)
+		
+	pass
 
 def objectType(rowobj):
     # used to decide the object type in the converter function
