@@ -16,33 +16,65 @@ import json
 
 def module(rowobj):
 	module_name_pref = rowobj.obj_uri.split("/")[-1]
-	module_name_suf = None
+	# print("Module Def Name: ", module_name_pref)
+	module_def_name = f"{module_name_pref}_module_definition"
+	if module_def_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		module_def = sbol2.ModuleDefinition(module_def_name)
+	else:
+		module_def = rowobj.doc.moduleDefinitions.get(module_def_name)
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
 
-		module_name = f"{module_name_pref}_sample_design_module"
+		for col in rowobj.col_cell_dict.keys():
+			val = rowobj.col_cell_dict[col]
 
-		module_def = sbol2.ModuleDefinition(module_name)
+			if isinstance(val, str):
+				module_uris = val.split(",")
 
-	pass
+			for module_uri in module_uris:
+				module_uri = module_uri.strip()
+				module_name = module_uri.split("/")[-2]
+				# print("Module Name: ", module_name)
+				# print("Module URI: ", module_uri)
+				if module_name not in [m.displayId for m in module_def.modules]:
+					mod = module_def.modules.create(module_name)
+					mod.definition = module_uri
+				else:
+					mod = module_def.modules.get(module_name)
+			
+	if module_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		rowobj.doc.addModuleDefinition(module_def)	
+
 
 def funcComp(rowobj):
 	module_def_name = rowobj.obj_uri.split("/")[-1]
+	# print("MD Name: ", module_def_name)
 	fc_name = None
+	module_name = f"{module_def_name}_module_definition"
+	if module_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		module_def = sbol2.ModuleDefinition(module_name)
+	else:
+		module_def = rowobj.doc.moduleDefinitions.get(module_name)
+
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
-		module_name = f"{module_def_name}_module_definition"
-		module_def = sbol2.ModuleDefinition(module_name)
-		fc_name = val
-		if fc_name not in [fc.displayId for fc in module_def.functionalComponents]:
-			fc = module_def.functionalComponents.create(fc_name)
-			fc.definition = val
-		else:
-			fc = module_def.functionalComponents.get(fc_name)
-
-		rowobj.doc.addModuleDefinition(module_def)
+		# print("FC links: ", val)
+		fc_uris = [val] if isinstance(val, str) else val
 		
-	pass
+		for fc_uri in fc_uris:
+			fc_name = fc_uri.split("/")[-2]
+			# print("FC Name: ", fc_name)
+			# print("FC URI: ", fc_uri)
+			if fc_name not in [fc.displayId for fc in module_def.functionalComponents]:
+				fc = module_def.functionalComponents.create(fc_name)
+				fc.definition = fc_uri
+			else:
+				fc = module_def.functionalComponents.get(fc_name)
+			
+	if module_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		rowobj.doc.addModuleDefinition(module_def)	
+
+
 
 def objectType(rowobj):
     # used to decide the object type in the converter function
@@ -77,7 +109,6 @@ def displayId(rowobj):
 		private_collection = False
 		
 		if data["Master Collection"].strip() == "":
-			
 			master_collection = False
 		else:
 			collection = data["Master Collection"]
