@@ -14,6 +14,165 @@ import json
 # if in lib2 or lib_both for version 2 and lib3 or lib_both for version 3
 # would reduce code duplication?
 
+def biochemical_reaction(rowobj):
+	chemical_name = rowobj.obj_uri.split("/")[-1]
+	chemical_uri = rowobj.obj_uri
+	module_def_name = f"{chemical_name}_production"
+	
+	enzyme_name = None
+	substrate_name = None
+	
+	if module_def_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		module_def = sbol2.ModuleDefinition(module_def_name)
+	else:
+		module_def = rowobj.doc.moduleDefinitions.get(module_def_name)
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+		if col == "Enzyme":
+			if isinstance(val, str):
+				enzyme_uri = val
+				enzyme_name = val.split("/")[-1]
+
+		if col == "Substrate":
+			if isinstance(val, str):
+				substrate_uri = val
+				substrate_name = val.split("/")[-1]
+				
+	# enzyme not provided
+	if substrate_name is None:
+		print("Substrate not provided. Just FC for enzyme will be created.")
+		if enzyme_name not in [fc.displayId for fc in module_def.functionalComponents]:
+			enzyme_fc = module_def.functionalComponents.create(enzyme_name)
+			enzyme_fc.definition = enzyme_uri
+		else:
+			enzyme_fc = module_def.functionalComponents.get(enzyme_name)
+		rowobj.doc.addModuleDefinition(module_def)
+		return
+	
+	# substrate not provided
+	if enzyme_name is None:
+		print("Enzyme not provided. Just FC for substrate will be created.")
+		if substrate_name not in [fc.displayId for fc in module_def.functionalComponents]:
+			substrate_fc = module_def.functionalComponents.create(substrate_name)
+			substrate_fc.definition = substrate_uri
+		else:
+			substrate_fc = module_def.functionalComponents.get(substrate_name)
+		rowobj.doc.addModuleDefinition(module_def)
+		return
+	
+
+	# substrate fc
+	if substrate_name not in [fc.displayId for fc in module_def.functionalComponents]:
+		substrate_fc = module_def.functionalComponents.create(substrate_name)
+		substrate_fc.definition = substrate_uri
+	else:
+		substrate_fc = module_def.functionalComponents.get(substrate_name)
+
+	# enzyme fc
+	if enzyme_name not in [fc.displayId for fc in module_def.functionalComponents]:
+		enzyme_fc = module_def.functionalComponents.create(enzyme_name)
+		enzyme_fc.definition = enzyme_uri
+	else:
+		enzyme_fc = module_def.functionalComponents.get(enzyme_name)
+	
+	# chemical fc
+	if chemical_name not in [fc.displayId for fc in module_def.functionalComponents]:
+		chemical_fc = module_def.functionalComponents.create(chemical_name)
+		chemical_fc.definition = chemical_uri
+	else:
+		chemical_fc = module_def.functionalComponents.get(chemical_name)
+	
+	# participation for substrate
+	participation_substrate = sbol2.Participation(uri = f'{substrate_name}_reactant')
+	participation_substrate.participant = substrate_fc
+	participation_substrate.uri = f'{substrate_name}_reactant'
+	participation_substrate.roles = [sbol2.SBO_REACTANT]
+
+	# participation for enzyme
+	participation_enzyme = sbol2.Participation(uri = f'{enzyme_name}_modifier')
+	participation_enzyme.participant = enzyme_fc
+	participation_enzyme.uri = f'{enzyme_name}_modifier'
+	participation_enzyme.roles = ["http://identifiers.org/biomodels.sbo/SBO:0000019"] #'SBO_MODIFIER'
+
+	# participation for profuct
+	participation_product = sbol2.Participation(uri = f'{chemical_name}_product')
+	participation_product.participant = chemical_fc
+	participation_product.uri = f'{chemical_name}_product'
+	participation_product.roles = [sbol2.SBO_PRODUCT]
+
+	# define the interaction
+	interaction_name = f'{chemical_name}_biochemical_reaction'
+	interaction_type = sbol2.SBO_BIOCHEMICAL_REACTION
+	interaction = sbol2.Interaction(interaction_name, interaction_type)
+
+	interaction.participations.add(participation_substrate)
+	interaction.participations.add(participation_enzyme)
+	interaction.participations.add(participation_product)
+	
+	module_def.interactions.add(interaction)
+	rowobj.doc.addModuleDefinition(module_def)
+		
+		
+def module(rowobj):
+	module_name_pref = rowobj.obj_uri.split("/")[-1]
+	# print("Module Def Name: ", module_name_pref)
+	module_def_name = f"{module_name_pref}_module_definition"
+	if module_def_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		module_def = sbol2.ModuleDefinition(module_def_name)
+	else:
+		module_def = rowobj.doc.moduleDefinitions.get(module_def_name)
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+
+		for col in rowobj.col_cell_dict.keys():
+			val = rowobj.col_cell_dict[col]
+
+			if isinstance(val, str):
+				module_uris = val.split(",")
+
+			for module_uri in module_uris:
+				module_uri = module_uri.strip()
+				module_name = module_uri.split("/")[-2]
+				# print("Module Name: ", module_name)
+				# print("Module URI: ", module_uri)
+				if module_name not in [m.displayId for m in module_def.modules]:
+					mod = module_def.modules.create(module_name)
+					mod.definition = module_uri
+				else:
+					mod = module_def.modules.get(module_name)
+			
+	if module_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		rowobj.doc.addModuleDefinition(module_def)	
+
+
+def funcComp(rowobj):
+	module_def_name = rowobj.obj_uri.split("/")[-1]
+	# print("MD Name: ", module_def_name)
+	fc_name = None
+	module_name = f"{module_def_name}_module_definition"
+	if module_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		module_def = sbol2.ModuleDefinition(module_name)
+	else:
+		module_def = rowobj.doc.moduleDefinitions.get(module_name)
+
+	for col in rowobj.col_cell_dict.keys():
+		val = rowobj.col_cell_dict[col]
+		# print("FC links: ", val)
+		fc_uris = [val] if isinstance(val, str) else val
+		
+		for fc_uri in fc_uris:
+			fc_name = fc_uri.split("/")[-2]
+			# print("FC Name: ", fc_name)
+			# print("FC URI: ", fc_uri)
+			if fc_name not in [fc.displayId for fc in module_def.functionalComponents]:
+				fc = module_def.functionalComponents.create(fc_name)
+				fc.definition = fc_uri
+			else:
+				fc = module_def.functionalComponents.get(fc_name)
+			
+	if module_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
+		rowobj.doc.addModuleDefinition(module_def)	
+
 
 
 def objectType(rowobj):
@@ -34,7 +193,7 @@ def displayId(rowobj):
 	
 	dict = os.getenv("SBOL_DICTIONARY")
 	data = json.loads(dict)
-	url = data["Domain"]
+	url = data["Domain"].strip()
 	if url.endswith('/'):
 		url = url[:-1]
 	collection = data["Library Name"]
@@ -49,7 +208,6 @@ def displayId(rowobj):
 		private_collection = False
 		
 		if data["Master Collection"].strip() == "":
-			
 			master_collection = False
 		else:
 			collection = data["Master Collection"]
