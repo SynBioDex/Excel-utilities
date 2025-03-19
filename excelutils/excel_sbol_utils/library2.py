@@ -193,7 +193,7 @@ def displayId(rowobj):
 	
 	dict = os.getenv("SBOL_DICTIONARY")
 	data = json.loads(dict)
-	url = data["Domain"]
+	url = data["Domain"].strip()
 	if url.endswith('/'):
 		url = url[:-1]
 	collection = data["Library Name"]
