@@ -21,11 +21,15 @@ def biochemical_reaction(rowobj):
 	
 	enzyme_name = None
 	substrate_name = None
+	username = os.getenv("SBOL_USERNAME")
+	password = os.getenv("SBOL_PASSWORD")
+	url = os.getenv("SBOL_URL")
 	
 	if module_def_name not in [m.displayId for m in rowobj.doc.moduleDefinitions]:
 		module_def = sbol2.ModuleDefinition(module_def_name)
 	else:
 		module_def = rowobj.doc.moduleDefinitions.get(module_def_name)
+	
 	for col in rowobj.col_cell_dict.keys():
 		val = rowobj.col_cell_dict[col]
 		if col == "Enzyme":
@@ -33,10 +37,35 @@ def biochemical_reaction(rowobj):
 				enzyme_uri = val
 				enzyme_name = val.split("/")[-1]
 
+		if col == "Enzyme (URI)":
+			if isinstance(val, str):
+				valid_uri = link_validation(username, password, url, val)
+				if not valid_uri:
+					print(f"URI in '{val}' is invalid. Skipping addition for {col}.")
+					print("Terminating")
+					sys.exit(1)
+					continue
+				else:
+					enzyme_uri = val
+					enzyme_name = val.split("/")[-2]
+
 		if col == "Substrate":
 			if isinstance(val, str):
 				substrate_uri = val
 				substrate_name = val.split("/")[-1]
+		
+		if col == "Substrate (URI)":
+			if isinstance(val, str):
+				valid_uri = link_validation(username, password, url, val)
+				if not valid_uri:
+					print(f"URI in '{val}' is invalid. Skipping addition for {col}.")
+					print("Terminating")
+					sys.exit(1)
+					continue
+				else:
+					substrate_uri = val
+					substrate_name = val.split("/")[-2]
+
 				
 	# enzyme not provided
 	if substrate_name is None:
