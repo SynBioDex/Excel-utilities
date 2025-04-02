@@ -982,9 +982,9 @@ def sequence(rowobj):
 			elif re.match(r'^[a-zA-Z \s*]+$', val):
 				# if a sequence string
 
-				# removes spaces, enters, and makes all lower case
+				# removes spaces, enters, and makes all upper case
 				val = "".join(val.split())
-				val = val.replace(u"\ufeff", "").lower()
+				val = val.replace(u"\ufeff", "").upper()
 
 				uri = f'{url}/search/sequence={val}&'
 				if data["Domain"].strip() == "":
@@ -1042,10 +1042,10 @@ def proteinSequence(rowobj):
 					return
 				rowobj.obj.sequences = [val]
 
-			elif re.match(r'^[ACDEFGHIKLMNPQRSTVWY\s*]+$', val):
+			elif re.match(r'^[ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy\s*]+$', val):
 				# if a sequence string
 
-				# removes spaces, enters, and makes all lower case
+				# removes spaces, enters, and makes all upper case
 				val = "".join(val.split())
 				# removes *
 				val = val.replace('*', '')
